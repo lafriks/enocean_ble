@@ -137,3 +137,19 @@ async def test_remove_entry_deletes_store() -> None:
     with patch("homeassistant.helpers.storage.Store", return_value=store):
         await async_remove_entry(SimpleNamespace(), _entry())
     store.async_remove.assert_awaited_once()
+
+
+async def test_bluetooth_callback_is_filtered_by_address() -> None:
+    with patch("homeassistant.components.bluetooth.async_register_callback") as register:
+        await _setup(None)
+    matcher = register.call_args.args[2]
+    assert matcher == {"address": _MAC, "manufacturer_id": ENOCEAN_MANUFACTURER_ID}
+
+
+async def test_advertisement_after_unload_is_ignored() -> None:
+    hass, entry, _store = await _setup(None)
+    assert await async_unload_entry(hass, entry) is True
+
+    with patch("custom_components.enocean_ble._emit_button_event") as emit:
+        _process_advertisement(hass, entry, _service_info(1))
+    emit.assert_not_called()

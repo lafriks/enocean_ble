@@ -100,7 +100,7 @@ async def async_setup_entry(hass: Any, entry: Any) -> bool:
         async_register_callback(
             hass,
             _async_handle_advertisement,
-            {"manufacturer_id": ENOCEAN_MANUFACTURER_ID},
+            {"address": mac_address, "manufacturer_id": ENOCEAN_MANUFACTURER_ID},
             BluetoothScanningMode.PASSIVE,
         )
     )
@@ -163,7 +163,11 @@ def _process_advertisement(
     service_info: Any,
 ) -> None:
     """Process BLE advertisements and emit Home Assistant button events."""
-    entry_data = hass.data[DOMAIN][entry.entry_id]
+    entry_data = hass.data.get(DOMAIN, {}).get(entry.entry_id)
+    if entry_data is None:
+        # Entry data is removed on unload before Home Assistant unregisters this callback.
+        _LOGGER.debug("adv_ignored entry_id=%s reason=entry_unloaded", entry.entry_id)
+        return
     configured_mac = str(entry_data[CONF_MAC_ADDRESS]).upper()
     manufacturer_ids = sorted(service_info.manufacturer_data.keys())
     manufacturer_data = service_info.manufacturer_data.get(ENOCEAN_MANUFACTURER_ID)
