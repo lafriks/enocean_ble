@@ -29,6 +29,13 @@
 - In `advanced` mode the event entity changes state for every event type (`press`, `single_press`, `release`, ...).
 - Switch the device to `simple` mode, or filter on the `event_type` attribute.
 
+## Switch stops responding after a factory reset
+
+- The integration rejects telegrams whose sequence counter is not higher than the last accepted one,
+  and remembers that counter across restarts.
+- If a reset restarts the switch's counter, its telegrams are ignored as replays.
+- Delete the device in Home Assistant and add it again; removing the entry also deletes the stored counter.
+
 ## Sensor entities disappeared
 
 - Switching a device to `simple` mode removes its event sensors. Switching back to `advanced` recreates them.

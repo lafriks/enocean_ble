@@ -33,6 +33,8 @@ from .const import (
     SIGNAL_BUTTON_EVENT,
     SIMPLE_EVENT_TYPE,
     SIMPLE_MODE_PLATFORMS,
+    STORAGE_SAVE_DELAY_SECONDS,
+    STORAGE_VERSION,
 )
 from .parser import parse_commissioning_telegram, parse_data_telegram
 
@@ -63,19 +65,25 @@ async def async_setup_entry(hass: Any, entry: Any) -> bool:
     event_mode = get_event_mode(entry)
     platforms = SIMPLE_MODE_PLATFORMS if event_mode == EVENT_MODE_SIMPLE else PLATFORMS
 
+    store = _sequence_store(hass, entry)
+    stored = await store.async_load()
+    last_sequence_counter = int(stored.get("last_sequence_counter", -1)) if stored else -1
+
     hass.data[DOMAIN][entry.entry_id] = {
         CONF_MAC_ADDRESS: mac_address,
         CONF_SECURITY_KEY: security_key,
         CONF_EVENT_MODE: event_mode,
         "platforms": platforms,
-        "last_sequence_counter": -1,
+        "store": store,
+        "last_sequence_counter": last_sequence_counter,
         "buttons": {},
     }
     _LOGGER.debug(
-        "setup_entry entry_id=%s mac=%s event_mode=%s security_key_present=%s security_key_fingerprint=%s",
+        "setup_entry entry_id=%s mac=%s event_mode=%s last_sequence_counter=%s security_key_present=%s security_key_fingerprint=%s",
         entry.entry_id,
         mac_address,
         event_mode,
+        last_sequence_counter,
         bool(security_key),
         _fingerprint_key(security_key),
     )
@@ -101,6 +109,23 @@ async def async_setup_entry(hass: Any, entry: Any) -> bool:
 
     _LOGGER.info("EnOcean BLE device configured: %s", mac_address)
     return True
+
+
+def _sequence_store(hass: Any, entry: Any) -> Any:
+    """Return the store holding the last accepted sequence counter of an entry."""
+    from homeassistant.helpers.storage import Store
+
+    return Store(hass, STORAGE_VERSION, f"{DOMAIN}.{entry.entry_id}")
+
+
+def _sequence_data(entry_data: dict[str, Any]) -> dict[str, int]:
+    return {"last_sequence_counter": int(entry_data["last_sequence_counter"])}
+
+
+def _schedule_sequence_save(entry_data: dict[str, Any]) -> None:
+    store = entry_data.get("store")
+    if store is not None:
+        store.async_delay_save(lambda: _sequence_data(entry_data), STORAGE_SAVE_DELAY_SECONDS)
 
 
 def get_event_mode(entry: Any) -> str:
@@ -208,6 +233,7 @@ def _process_advertisement(
         if not security_key_hex:
             entry_data[CONF_SECURITY_KEY] = commissioning.security_key_hex
             entry_data["last_sequence_counter"] = commissioning.sequence_counter
+            _schedule_sequence_save(entry_data)
             new_data = dict(entry.data)
             new_data[CONF_SECURITY_KEY] = commissioning.security_key_hex
             hass.config_entries.async_update_entry(entry, data=new_data)
@@ -308,6 +334,7 @@ def _process_advertisement(
         )
     # Updated after emitting so handlers can see the previous device-wide sequence counter.
     entry_data["last_sequence_counter"] = parsed.sequence_counter
+    _schedule_sequence_save(entry_data)
 
 
 def _emit_simple_button_event(
@@ -620,9 +647,22 @@ async def async_unload_entry(hass: Any, entry: Any) -> bool:
         entry, entry_data.get("platforms", PLATFORMS)
     )
     if unloaded:
+        # Pending long-press/release-timeout timers would otherwise fire into the reloaded entry.
+        for state in entry_data.get("buttons", {}).values():
+            if isinstance(state, dict):
+                _cancel_all_timers(state)
+        store = entry_data.get("store")
+        if store is not None:
+            # Write now instead of after the save delay, so a reload loads the latest counter.
+            await store.async_save(_sequence_data(entry_data))
         hass.data[DOMAIN].pop(entry.entry_id, None)
     _LOGGER.debug("unload_entry entry_id=%s unloaded=%s", entry.entry_id, unloaded)
     return bool(unloaded)
+
+
+async def async_remove_entry(hass: Any, entry: Any) -> None:
+    """Remove persisted data of a deleted config entry."""
+    await _sequence_store(hass, entry).async_remove()
 
 
 def _fingerprint_key(key_hex: str) -> str:

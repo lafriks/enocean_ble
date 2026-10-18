@@ -14,10 +14,10 @@
 - Simple event mode (options flow): one `press` event per click, no sensors, no bus events.
 - Lost-press recovery checks against the device-wide sequence counter (advanced mode).
 - Latvian translation.
+- Last sequence counter persisted across restarts (replay protection).
+- Pending advanced-mode timers cancelled on entry unload.
 
 ## Next
 
-- Persist the last sequence counter across restarts (replay protection currently resets on restart).
-- Cancel pending advanced-mode timers on entry unload.
 - Collect user feedback on simple mode.
 - Optional: richer diagnostics tooling if needed by field feedback.

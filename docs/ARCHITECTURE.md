@@ -23,7 +23,10 @@
 
 1. BLE advertisement is received by Home Assistant Bluetooth.
 2. Integration filters by configured MAC and EnOcean manufacturer data.
-3. Payload is parsed and MIC-verified; repeated telegrams are dropped by sequence counter.
+3. Payload is parsed and MIC-verified; repeated or replayed telegrams are dropped by sequence counter.
+   The last accepted counter is saved to `.storage/enocean_ble.<entry_id>` (5 s delayed write,
+   immediate write on unload) and restored on setup, so replay protection survives restarts.
+   The file is deleted when the config entry is removed.
 4. Raw `press`/`release` is turned into events according to `event_mode` (see below).
 5. Integration dispatches internal signal per entry.
 6. In `advanced` mode, integration also fires bus events:

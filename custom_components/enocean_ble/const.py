@@ -48,6 +48,10 @@ MIC_LENGTH = 4
 LONG_PRESS_SECONDS = 1.2
 RELEASE_TIMEOUT_SECONDS = 8.0
 
+# Last accepted sequence counter is persisted so replay protection survives restarts.
+STORAGE_VERSION = 1
+STORAGE_SAVE_DELAY_SECONDS = 5.0
+
 STATUS_BIT_ENERGY_BOW = 0x01
 STATUS_BIT_A0 = 0x02
 STATUS_BIT_A1 = 0x04
