@@ -63,7 +63,10 @@ def _emit(
     emit = _emit_simple_button_event if simple else _emit_button_event
     with (
         patch("homeassistant.helpers.event.async_call_later", side_effect=fake_call_later),
-        patch("custom_components.enocean_ble._fire_event", side_effect=lambda **kw: events.append(kw["event_type"])),
+        patch(
+            "custom_components.enocean_ble._fire_event",
+            side_effect=lambda **kw: events.append(kw["event_type"]),
+        ),
     ):
         emit(
             hass=hass,
@@ -86,14 +89,15 @@ def _fire_pending(
     fake_call_later: Any,
 ) -> None:
     """Fire the pending timer with the given delay, then remove it (simulating HA behavior)."""
-    target = next(
-        (tid, cb) for tid, (d, cb, _) in pending.items() if d == delay
-    )
+    target = next((tid, cb) for tid, (d, cb, _) in pending.items() if d == delay)
     tid, cb = target
     del pending[tid]
     with (
         patch("homeassistant.helpers.event.async_call_later", side_effect=fake_call_later),
-        patch("custom_components.enocean_ble._fire_event", side_effect=lambda **kw: events.append(kw["event_type"])),
+        patch(
+            "custom_components.enocean_ble._fire_event",
+            side_effect=lambda **kw: events.append(kw["event_type"]),
+        ),
     ):
         cb(None)
 
@@ -101,6 +105,7 @@ def _fire_pending(
 # ---------------------------------------------------------------------------
 # Short press
 # ---------------------------------------------------------------------------
+
 
 class TestShortPress:
     def test_press_then_release_emits_press_release_single(self) -> None:
@@ -128,6 +133,7 @@ class TestShortPress:
 # ---------------------------------------------------------------------------
 # Long press — normal (release arrives before timeout)
 # ---------------------------------------------------------------------------
+
 
 class TestLongPressNormal:
     def test_long_press_fires_and_schedules_timeout(self) -> None:
@@ -164,6 +170,7 @@ class TestLongPressNormal:
 # ---------------------------------------------------------------------------
 # Release timeout — lost release
 # ---------------------------------------------------------------------------
+
 
 class TestReleaseTimeout:
     def test_timeout_fires_release_timeout_when_release_lost(self) -> None:
@@ -215,6 +222,7 @@ class TestReleaseTimeout:
 # single_press dedup
 # ---------------------------------------------------------------------------
 
+
 class TestSinglePress:
     def test_single_press_fires_on_press_immediately(self) -> None:
         """single_press fires on press, before press duration is known."""
@@ -244,6 +252,7 @@ class TestSinglePress:
 # ---------------------------------------------------------------------------
 # orphan_release coherence
 # ---------------------------------------------------------------------------
+
 
 class TestOrphanRelease:
     def test_orphan_coherent_fires_single_press(self) -> None:
@@ -302,6 +311,7 @@ class TestOrphanRelease:
 # Simple mode
 # ---------------------------------------------------------------------------
 
+
 class TestSimpleMode:
     def test_short_press_fires_single_press_event(self) -> None:
         hass, entry, entry_data, pending, fake_call_later = _make_env()
@@ -328,8 +338,28 @@ class TestSimpleMode:
 
         _emit(hass, entry, entry_data, "press", events, fake_call_later, seq=1, simple=True)
         _emit(hass, entry, entry_data, "release", events, fake_call_later, seq=2, simple=True)
-        _emit(hass, entry, entry_data, "press", events, fake_call_later, seq=3, button="B0", simple=True)
-        _emit(hass, entry, entry_data, "release", events, fake_call_later, seq=4, button="B0", simple=True)
+        _emit(
+            hass,
+            entry,
+            entry_data,
+            "press",
+            events,
+            fake_call_later,
+            seq=3,
+            button="B0",
+            simple=True,
+        )
+        _emit(
+            hass,
+            entry,
+            entry_data,
+            "release",
+            events,
+            fake_call_later,
+            seq=4,
+            button="B0",
+            simple=True,
+        )
         # A0 press at seq=8 lost, several telegrams before it lost too
         _emit(hass, entry, entry_data, "release", events, fake_call_later, seq=9, simple=True)
         assert events == ["press", "press", "press"]

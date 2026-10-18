@@ -104,7 +104,9 @@ class EnOceanBleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._log_terminal_without_entry()
         self._cancel_stage_task(reason="flow_removed")
 
-    async def async_step_bluetooth(self, discovery_info: BluetoothServiceInfoBleak) -> ConfigFlowResult:
+    async def async_step_bluetooth(
+        self, discovery_info: BluetoothServiceInfoBleak
+    ) -> ConfigFlowResult:
         """Handle Bluetooth discovery and start commissioning."""
         discovered_mac = discovery_info.address.upper()
         manufacturer_data = discovery_info.manufacturer_data.get(ENOCEAN_MANUFACTURER_ID)
@@ -154,7 +156,9 @@ class EnOceanBleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         return await self.async_step_commissioning()
 
-    async def async_step_commissioning(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+    async def async_step_commissioning(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
         """Show commissioning instructions and wait for L26 telegram."""
         # If the commissioning telegram is already known (ex: cached discovery payload),
         # continue to the explicit user confirmation step.
@@ -175,7 +179,9 @@ class EnOceanBleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             return self.async_show_form(
                 step_id="commissioning",
                 errors={"base": "commissioning_not_detected"},
-                description_placeholders={"name": self._pending_title or self._pending_mac or DOMAIN},
+                description_placeholders={
+                    "name": self._pending_title or self._pending_mac or DOMAIN
+                },
             )
 
         if user_input is None:
@@ -238,7 +244,9 @@ class EnOceanBleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             return self.async_abort(reason="no_bluetooth_discovery")
 
         if self._stage_task is None:
-            self._stage_started_at = max(self._last_adv_time, self._max_adv_time_for_mac(self._pending_mac))
+            self._stage_started_at = max(
+                self._last_adv_time, self._max_adv_time_for_mac(self._pending_mac)
+            )
             self._stage_started_monotonic = self._monotonic_now()
             self._active_stage_id = step_id
             self._ensure_stage_stats(step_id)
@@ -263,7 +271,9 @@ class EnOceanBleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 step_id=step_id,
                 progress_action=progress_action,
                 progress_task=self._stage_task,
-                description_placeholders={"name": self._pending_title or self._pending_mac or DOMAIN},
+                description_placeholders={
+                    "name": self._pending_title or self._pending_mac or DOMAIN
+                },
             )
 
         try:
@@ -317,7 +327,9 @@ class EnOceanBleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             return self.async_show_form(
                 step_id=step_id,
                 errors={"base": error},
-                description_placeholders={"name": self._pending_title or self._pending_mac or DOMAIN},
+                description_placeholders={
+                    "name": self._pending_title or self._pending_mac or DOMAIN
+                },
             )
 
         self._trace_event(
@@ -474,7 +486,10 @@ class EnOceanBleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         payload_hex=payload.hex(),
                     )
                     continue
-                if expected_button_mask is not None and _button_mask(payload) != expected_button_mask:
+                if (
+                    expected_button_mask is not None
+                    and _button_mask(payload) != expected_button_mask
+                ):
                     self._record_payload_candidate(
                         stage_label=stage_label,
                         payload=payload,
@@ -488,7 +503,10 @@ class EnOceanBleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         payload_hex=payload.hex(),
                     )
                     continue
-                if forbidden_button_mask is not None and _button_mask(payload) == forbidden_button_mask:
+                if (
+                    forbidden_button_mask is not None
+                    and _button_mask(payload) == forbidden_button_mask
+                ):
                     self._record_payload_candidate(
                         stage_label=stage_label,
                         payload=payload,
@@ -545,7 +563,9 @@ class EnOceanBleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             raise ValueError("No pending MAC")
 
         payload_mac = _format_mac(commissioning.static_source_address_hex)
-        payload_mac_reversed = _format_mac(_reverse_mac_hex(commissioning.static_source_address_hex))
+        payload_mac_reversed = _format_mac(
+            _reverse_mac_hex(commissioning.static_source_address_hex)
+        )
         if self._pending_mac not in {payload_mac, payload_mac_reversed}:
             _LOGGER.debug(
                 "flow_stage_mismatch address=%s payload_mac=%s payload_mac_reversed=%s",
@@ -653,7 +673,9 @@ class EnOceanBleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 return step_id
         return self._active_stage_id or "unknown"
 
-    def _trace_event(self, event: str, *, step: str | None = None, note: str = "", **fields: Any) -> None:
+    def _trace_event(
+        self, event: str, *, step: str | None = None, note: str = "", **fields: Any
+    ) -> None:
         """Emit normalized FLOW_TRACE_V3 logs with correlation fields."""
         monotonic_ts = self._monotonic_now()
         delta_stage_ms: float | None = None

@@ -97,7 +97,9 @@ class EnOceanBleButtonEventSensor(SensorEntity):
             self._button_code,
             signal,
         )
-        self.async_on_remove(async_dispatcher_connect(self.hass, signal, self._async_handle_button_event))
+        self.async_on_remove(
+            async_dispatcher_connect(self.hass, signal, self._async_handle_button_event)
+        )
 
     @callback
     def _async_handle_button_event(self, payload: dict[str, Any]) -> None:

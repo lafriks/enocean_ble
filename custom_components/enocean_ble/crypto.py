@@ -27,7 +27,7 @@ def build_aad(sequence_counter: int, payload: bytes) -> bytes:
 
     # Type(1) + Manufacturer(2) + Sequence(4) + Payload(N) + MIC(4)
     frame_length = 1 + 2 + 4 + len(payload) + MIC_LENGTH
-    type_byte = b"\xFF"
+    type_byte = b"\xff"
     manufacturer_le = ENOCEAN_MANUFACTURER_ID.to_bytes(2, byteorder="little")
 
     return (

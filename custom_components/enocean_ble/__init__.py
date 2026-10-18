@@ -337,18 +337,30 @@ def _emit_simple_button_event(
     elif state.get("last_press_seq") == sequence_counter - 1:
         _LOGGER.debug(
             "event_simple_release_paired entry_id=%s mac=%s button=%s sequence_counter=%s",
-            entry.entry_id, mac_address, button, sequence_counter,
+            entry.entry_id,
+            mac_address,
+            button,
+            sequence_counter,
         )
         return
     else:
         _LOGGER.debug(
             "event_simple_press_recovered entry_id=%s mac=%s button=%s sequence_counter=%s last_press_seq=%s",
-            entry.entry_id, mac_address, button, sequence_counter, state.get("last_press_seq"),
+            entry.entry_id,
+            mac_address,
+            button,
+            sequence_counter,
+            state.get("last_press_seq"),
         )
 
     _fire_event(
-        hass=hass, entry=entry, button=button, event_type=SIMPLE_EVENT_TYPE,
-        sequence_counter=sequence_counter, rssi=rssi, mac_address=mac_address,
+        hass=hass,
+        entry=entry,
+        button=button,
+        event_type=SIMPLE_EVENT_TYPE,
+        sequence_counter=sequence_counter,
+        rssi=rssi,
+        mac_address=mac_address,
     )
 
 
@@ -395,14 +407,24 @@ def _emit_button_event(
             sequence_counter,
         )
         _fire_event(
-            hass=hass, entry=entry, button=button, event_type="press",
-            sequence_counter=sequence_counter, rssi=rssi, mac_address=mac_address,
+            hass=hass,
+            entry=entry,
+            button=button,
+            event_type="press",
+            sequence_counter=sequence_counter,
+            rssi=rssi,
+            mac_address=mac_address,
         )
         if sequence_counter != state.get("last_single_press_seq"):
             state["last_single_press_seq"] = sequence_counter
             _fire_event(
-                hass=hass, entry=entry, button=button, event_type="single_press",
-                sequence_counter=sequence_counter, rssi=rssi, mac_address=mac_address,
+                hass=hass,
+                entry=entry,
+                button=button,
+                event_type="single_press",
+                sequence_counter=sequence_counter,
+                rssi=rssi,
+                mac_address=mac_address,
             )
 
         def _long_press_timer(_now: object) -> None:
@@ -411,11 +433,19 @@ def _emit_button_event(
             state["long_fired"] = True
             state["cancel_long_cb"] = None
             _LOGGER.debug(
-                "event_long_press entry_id=%s mac=%s button=%s", entry.entry_id, mac_address, button,
+                "event_long_press entry_id=%s mac=%s button=%s",
+                entry.entry_id,
+                mac_address,
+                button,
             )
             _fire_event(
-                hass=hass, entry=entry, button=button, event_type="long_press",
-                sequence_counter=sequence_counter, rssi=rssi, mac_address=mac_address,
+                hass=hass,
+                entry=entry,
+                button=button,
+                event_type="long_press",
+                sequence_counter=sequence_counter,
+                rssi=rssi,
+                mac_address=mac_address,
             )
 
         def _release_timeout_timer(_now: object) -> None:
@@ -425,15 +455,25 @@ def _emit_button_event(
             state["long_fired"] = False
             state["cancel_timeout_cb"] = None
             _LOGGER.debug(
-                "event_release_timeout entry_id=%s mac=%s button=%s", entry.entry_id, mac_address, button,
+                "event_release_timeout entry_id=%s mac=%s button=%s",
+                entry.entry_id,
+                mac_address,
+                button,
             )
             _fire_event(
-                hass=hass, entry=entry, button=button, event_type="release_timeout",
-                sequence_counter=sequence_counter, rssi=rssi, mac_address=mac_address,
+                hass=hass,
+                entry=entry,
+                button=button,
+                event_type="release_timeout",
+                sequence_counter=sequence_counter,
+                rssi=rssi,
+                mac_address=mac_address,
             )
 
         state["cancel_long_cb"] = async_call_later(hass, LONG_PRESS_SECONDS, _long_press_timer)
-        state["cancel_timeout_cb"] = async_call_later(hass, RELEASE_TIMEOUT_SECONDS, _release_timeout_timer)
+        state["cancel_timeout_cb"] = async_call_later(
+            hass, RELEASE_TIMEOUT_SECONDS, _release_timeout_timer
+        )
         return
 
     if event_type == "release":
@@ -444,16 +484,30 @@ def _emit_button_event(
             state["long_fired"] = False
             _LOGGER.debug(
                 "event_release entry_id=%s mac=%s button=%s sequence_counter=%s long_fired=%s",
-                entry.entry_id, mac_address, button, sequence_counter, long_fired,
+                entry.entry_id,
+                mac_address,
+                button,
+                sequence_counter,
+                long_fired,
             )
             _fire_event(
-                hass=hass, entry=entry, button=button, event_type="release",
-                sequence_counter=sequence_counter, rssi=rssi, mac_address=mac_address,
+                hass=hass,
+                entry=entry,
+                button=button,
+                event_type="release",
+                sequence_counter=sequence_counter,
+                rssi=rssi,
+                mac_address=mac_address,
             )
             if long_fired:
                 _fire_event(
-                    hass=hass, entry=entry, button=button, event_type="long_release",
-                    sequence_counter=sequence_counter, rssi=rssi, mac_address=mac_address,
+                    hass=hass,
+                    entry=entry,
+                    button=button,
+                    event_type="long_release",
+                    sequence_counter=sequence_counter,
+                    rssi=rssi,
+                    mac_address=mac_address,
                 )
         else:
             # The sequence counter is shared by all buttons of the device, so coherence
@@ -461,18 +515,32 @@ def _emit_button_event(
             old_seq = int(entry_data.get("last_sequence_counter", -1))
             _LOGGER.debug(
                 "event_orphan_release entry_id=%s mac=%s button=%s sequence_counter=%s old_seq=%s",
-                entry.entry_id, mac_address, button, sequence_counter, old_seq,
+                entry.entry_id,
+                mac_address,
+                button,
+                sequence_counter,
+                old_seq,
             )
             _fire_event(
-                hass=hass, entry=entry, button=button, event_type="orphan_release",
-                sequence_counter=sequence_counter, rssi=rssi, mac_address=mac_address,
+                hass=hass,
+                entry=entry,
+                button=button,
+                event_type="orphan_release",
+                sequence_counter=sequence_counter,
+                rssi=rssi,
+                mac_address=mac_address,
             )
             is_coherent = old_seq >= 0 and sequence_counter - old_seq == 2
             if is_coherent and sequence_counter != state.get("last_single_press_seq"):
                 state["last_single_press_seq"] = sequence_counter
                 _fire_event(
-                    hass=hass, entry=entry, button=button, event_type="single_press",
-                    sequence_counter=sequence_counter, rssi=rssi, mac_address=mac_address,
+                    hass=hass,
+                    entry=entry,
+                    button=button,
+                    event_type="single_press",
+                    sequence_counter=sequence_counter,
+                    rssi=rssi,
+                    mac_address=mac_address,
                 )
         return
 

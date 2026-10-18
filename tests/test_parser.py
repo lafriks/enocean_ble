@@ -85,9 +85,7 @@ def test_parse_data_telegram_manual_vector() -> None:
 
 
 def test_parse_commissioning_telegram_ok() -> None:
-    telegram = bytes.fromhex(
-        "71010000" "AB4B9A91852B70B8A652A05E92BB12A0" "9F1B000015E2"
-    )
+    telegram = bytes.fromhex("71010000AB4B9A91852B70B8A652A05E92BB12A09F1B000015E2")
     parsed = parse_commissioning_telegram(telegram)
 
     assert parsed.sequence_counter == 0x00000171

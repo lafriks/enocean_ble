@@ -32,9 +32,13 @@ ATTR_MAC_ADDRESS = "mac_address"
 
 SUPPORTED_BUTTONS = {"A0", "A1", "B0", "B1"}
 SUPPORTED_EVENT_TYPES = {
-    "press", "release", "orphan_release", "release_timeout",  # RAW
-    "long_press", "long_release",                              # CALCULÉS (best-effort)
-    "single_press",                                            # UX (robust)
+    "press",
+    "release",
+    "orphan_release",
+    "release_timeout",  # RAW
+    "long_press",
+    "long_release",  # CALCULÉS (best-effort)
+    "single_press",  # UX (robust)
 }
 # Simple mode: one event per physical click, no custom bus events.
 SIMPLE_EVENT_TYPE = "press"
