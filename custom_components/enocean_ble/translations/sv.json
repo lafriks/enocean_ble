@@ -21,5 +21,27 @@
       "commissioning_not_detected": "Ingen commissioning-telegram togs emot inom 2 minuter. Försök igen. Om det fortfarande inte fungerar efter flera försök kan du prova en fabriksåterställning. Läs först reset-varningen i dokumentationen.",
       "invalid_commissioning": "Ett commissioning-telegram togs emot men kunde inte valideras. Försök igen. Om detta fortsätter att misslyckas, läs reset-varningen i dokumentationen innan du återställer."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Läge för knapphändelser",
+        "description": "Välj hur knapptryckningar exponeras i Home Assistant. Byte av läge laddar om enheten.",
+        "data": {
+          "event_mode": "Händelseläge"
+        },
+        "data_description": {
+          "event_mode": "Enkelt: varje knappentitet (A0, A1, B0, B1) utlöser endast en `press`-händelse per klick; händelsesensorer och enocean_ble_button_event-busshändelser tas bort. Avancerat: alla händelsetyper (tryck, släpp, långt tryck, …), händelsesensorer och busshändelser."
+        }
+      }
+    }
+  },
+  "selector": {
+    "event_mode": {
+      "options": {
+        "advanced": "Avancerat (alla händelsetyper, sensorer och busshändelser)",
+        "simple": "Enkelt (en tryckhändelse per klick)"
+      }
+    }
   }
 }

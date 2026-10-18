@@ -21,5 +21,27 @@
       "commissioning_not_detected": "Aucune trame de commissioning n'a été reçue dans les 2 minutes. Réessayez. Si cela ne fonctionne toujours pas après plusieurs tentatives, vous pouvez essayer un reset usine. Merci de lire d'abord le disclaimer de reset dans la documentation.",
       "invalid_commissioning": "Une trame de commissioning a été reçue mais n'a pas pu être validée. Réessayez. Si cela continue d'échouer, consultez le disclaimer de reset dans la documentation avant de réinitialiser."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Mode d'événements des boutons",
+        "description": "Choisissez comment les appuis sur les boutons sont exposés dans Home Assistant. Changer de mode recharge l'appareil.",
+        "data": {
+          "event_mode": "Mode d'événements"
+        },
+        "data_description": {
+          "event_mode": "Simple : chaque entité bouton (A0, A1, B0, B1) émet un seul événement `press` par appui ; les capteurs d'événements et les événements de bus enocean_ble_button_event sont supprimés. Avancé : tous les types d'événements (appui, relâchement, appui long, …), capteurs d'événements et événements de bus."
+        }
+      }
+    }
+  },
+  "selector": {
+    "event_mode": {
+      "options": {
+        "advanced": "Avancé (tous les types d'événements, capteurs et événements de bus)",
+        "simple": "Simple (un événement d'appui par clic)"
+      }
+    }
   }
 }

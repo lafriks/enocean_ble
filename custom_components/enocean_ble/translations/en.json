@@ -21,5 +21,27 @@
       "commissioning_not_detected": "No commissioning telegram was received within 2 minutes. Try again. If it still does not work after multiple attempts, you can try a factory reset. Please read the reset disclaimer in the documentation first.",
       "invalid_commissioning": "A commissioning telegram was received but could not be validated. Try again. If this keeps failing, review the factory reset disclaimer in the documentation before resetting."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Button event mode",
+        "description": "Choose how button presses are exposed in Home Assistant. Changing the mode reloads the device.",
+        "data": {
+          "event_mode": "Event mode"
+        },
+        "data_description": {
+          "event_mode": "Simple: each button entity (A0, A1, B0, B1) fires only one `press` event per click; event sensors and enocean_ble_button_event bus events are removed. Advanced: all event types (press, release, long press, …), event sensors and bus events."
+        }
+      }
+    }
+  },
+  "selector": {
+    "event_mode": {
+      "options": {
+        "advanced": "Advanced (all event types, sensors and bus events)",
+        "simple": "Simple (one press event per click)"
+      }
+    }
   }
 }

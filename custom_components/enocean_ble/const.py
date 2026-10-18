@@ -5,9 +5,16 @@ from __future__ import annotations
 DOMAIN = "enocean_ble"
 INTEGRATION_NAME = "PTM 215B/PTM 216B"
 PLATFORMS = ["event", "sensor"]
+SIMPLE_MODE_PLATFORMS = ["event"]
 
 CONF_MAC_ADDRESS = "mac_address"
 CONF_SECURITY_KEY = "security_key"
+CONF_EVENT_MODE = "event_mode"
+
+EVENT_MODE_ADVANCED = "advanced"
+EVENT_MODE_SIMPLE = "simple"
+EVENT_MODES = [EVENT_MODE_ADVANCED, EVENT_MODE_SIMPLE]
+DEFAULT_EVENT_MODE = EVENT_MODE_ADVANCED
 
 ENOCEAN_MANUFACTURER_ID = 0x03DA
 ENOCEAN_MAC_PREFIX = "E2:15:"
@@ -29,6 +36,8 @@ SUPPORTED_EVENT_TYPES = {
     "long_press", "long_release",                              # CALCULÉS (best-effort)
     "single_press",                                            # UX (robust)
 }
+# Simple mode: one event per physical click, no custom bus events.
+SIMPLE_EVENT_TYPE = "press"
 
 DATA_TELEGRAM_MIN_LENGTH = 9
 MIC_LENGTH = 4

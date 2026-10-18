@@ -21,5 +21,27 @@
       "commissioning_not_detected": "Nie odebrano telegramu commissioning w ciągu 2 minut. Spróbuj ponownie. Jeśli po kilku próbach nadal nie działa, możesz wykonać reset fabryczny. Najpierw przeczytaj ostrzeżenie dotyczące resetu w dokumentacji.",
       "invalid_commissioning": "Odebrano telegram commissioning, ale nie udało się go zweryfikować. Spróbuj ponownie. Jeśli problem się powtarza, przeczytaj ostrzeżenie dotyczące resetu w dokumentacji przed resetem."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Tryb zdarzeń przycisków",
+        "description": "Wybierz, jak naciśnięcia przycisków są udostępniane w Home Assistant. Zmiana trybu powoduje ponowne załadowanie urządzenia.",
+        "data": {
+          "event_mode": "Tryb zdarzeń"
+        },
+        "data_description": {
+          "event_mode": "Prosty: każda encja przycisku (A0, A1, B0, B1) wywołuje tylko jedno zdarzenie `press` na kliknięcie; sensory zdarzeń i zdarzenia magistrali enocean_ble_button_event są usuwane. Zaawansowany: wszystkie typy zdarzeń (naciśnięcie, zwolnienie, długie naciśnięcie, …), sensory zdarzeń i zdarzenia magistrali."
+        }
+      }
+    }
+  },
+  "selector": {
+    "event_mode": {
+      "options": {
+        "advanced": "Zaawansowany (wszystkie typy zdarzeń, sensory i zdarzenia magistrali)",
+        "simple": "Prosty (jedno zdarzenie naciśnięcia na kliknięcie)"
+      }
+    }
   }
 }

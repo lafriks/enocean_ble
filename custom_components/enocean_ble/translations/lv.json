@@ -1,0 +1,47 @@
+{
+  "config": {
+    "step": {
+      "commissioning": {
+        "title": "EnOcean BLE automātiskā pievienošana",
+        "description": "Aktivizējiet automātisko pievienošanu ierīcei {name}:\n\n1. Turiet nospiestu pogu 1 7 sekundes\n2. Īsi nospiediet pogu 1\n3. Vēlreiz turiet nospiestu pogu 1 7 sekundes\n\nJums ir 2 minūtes. Ja nepieciešams, mēģiniet vēlreiz."
+      },
+      "bluetooth_confirm": {
+        "title": "Apstipriniet EnOcean BLE ierīci",
+        "description": "EnOcean slēdzis ar adresi {mac} veiksmīgi pievienots.\n\n⚠️ Nospiediet citu pogu, lai izslēgtu pievienošanas režīmu, un pēc tam noklikšķiniet uz Iesniegt."
+      }
+    },
+    "progress": {
+      "waiting_commissioning": "Turiet nospiestu pogu 1 7 sekundes, tad īsi nospiediet pogu 1 un vēlreiz turiet 7 sekundes."
+    },
+    "abort": {
+      "no_bluetooth_discovery": "Šī iestatīšana jāsāk no Bluetooth atklātas ierīces.",
+      "not_enocean_prefix": "Šī atklātā ierīce neizmanto EnOcean BLE MAC prefiksu (E2:15)."
+    },
+    "error": {
+      "commissioning_not_detected": "2 minūšu laikā netika saņemta pievienošanas telegramma. Mēģiniet vēlreiz. Ja pēc vairākiem mēģinājumiem tas joprojām nedarbojas, varat mēģināt atiestatīt rūpnīcas iestatījumus. Vispirms izlasiet atiestatīšanas brīdinājumu dokumentācijā.",
+      "invalid_commissioning": "Pievienošanas telegramma tika saņemta, bet to nevarēja pārbaudīt. Mēģiniet vēlreiz. Ja tas atkārtoti neizdodas, pirms atiestatīšanas izlasiet atiestatīšanas brīdinājumu dokumentācijā."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Pogu notikumu režīms",
+        "description": "Izvēlieties, kā pogu nospiedieni tiek padarīti pieejami Home Assistant. Mainot režīmu, ierīce tiek pārlādēta.",
+        "data": {
+          "event_mode": "Notikumu režīms"
+        },
+        "data_description": {
+          "event_mode": "Vienkāršais: katra pogas entītija (A0, A1, B0, B1) izraisa tikai vienu `press` notikumu par katru klikšķi; notikumu sensori un enocean_ble_button_event kopnes notikumi tiek noņemti. Paplašinātais: visi notikumu veidi (nospiešana, atlaišana, ilga nospiešana, …), notikumu sensori un kopnes notikumi."
+        }
+      }
+    }
+  },
+  "selector": {
+    "event_mode": {
+      "options": {
+        "advanced": "Paplašinātais (visi notikumu veidi, sensori un kopnes notikumi)",
+        "simple": "Vienkāršais (viens nospiešanas notikums par klikšķi)"
+      }
+    }
+  }
+}

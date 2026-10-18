@@ -21,5 +21,27 @@
       "commissioning_not_detected": "No se recibió ningún telegrama de comisionado en 2 minutos. Inténtalo de nuevo. Si sigue sin funcionar tras varios intentos, puedes probar un restablecimiento de fábrica. Lee primero el aviso de restablecimiento en la documentación.",
       "invalid_commissioning": "Se recibió un telegrama de comisionado, pero no se pudo validar. Inténtalo de nuevo. Si sigue fallando, revisa el aviso de restablecimiento en la documentación antes de reiniciar."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Modo de eventos de botones",
+        "description": "Elija cómo se exponen las pulsaciones de botones en Home Assistant. Cambiar el modo recarga el dispositivo.",
+        "data": {
+          "event_mode": "Modo de eventos"
+        },
+        "data_description": {
+          "event_mode": "Simple: cada entidad de botón (A0, A1, B0, B1) emite solo un evento `press` por pulsación; se eliminan los sensores de eventos y los eventos de bus enocean_ble_button_event. Avanzado: todos los tipos de eventos (pulsación, liberación, pulsación larga, …), sensores de eventos y eventos de bus."
+        }
+      }
+    }
+  },
+  "selector": {
+    "event_mode": {
+      "options": {
+        "advanced": "Avanzado (todos los tipos de eventos, sensores y eventos de bus)",
+        "simple": "Simple (un evento de pulsación por clic)"
+      }
+    }
   }
 }

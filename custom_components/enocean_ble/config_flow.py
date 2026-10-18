@@ -7,19 +7,29 @@ import logging
 from collections import defaultdict
 from typing import Any
 
+import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.components.bluetooth import (
     BluetoothServiceInfoBleak,
     async_discovered_service_info,
 )
+from homeassistant.core import callback
 from homeassistant.data_entry_flow import FlowResult
+from homeassistant.helpers.selector import (
+    SelectSelector,
+    SelectSelectorConfig,
+    SelectSelectorMode,
+)
 
 from .const import (
+    CONF_EVENT_MODE,
     CONF_MAC_ADDRESS,
     CONF_SECURITY_KEY,
+    DEFAULT_EVENT_MODE,
     DOMAIN,
     ENOCEAN_MAC_PREFIX,
     ENOCEAN_MANUFACTURER_ID,
+    EVENT_MODES,
     STATUS_BIT_ENERGY_BOW,
 )
 from .parser import parse_commissioning_telegram
@@ -36,6 +46,14 @@ class EnOceanBleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: i
     """Handle a config flow for EnOcean BLE."""
 
     VERSION = 1
+
+    @staticmethod
+    @callback  # type: ignore[misc]
+    def async_get_options_flow(
+        config_entry: config_entries.ConfigEntry,
+    ) -> EnOceanBleOptionsFlow:
+        """Return the options flow handler."""
+        return EnOceanBleOptionsFlow()
 
     def __init__(self) -> None:
         """Initialize config flow state."""
@@ -758,6 +776,31 @@ class EnOceanBleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: i
                 getattr(self, "flow_id", "unknown"),
                 self._pending_mac,
             )
+
+
+class EnOceanBleOptionsFlow(config_entries.OptionsFlow):  # type: ignore[misc]
+    """Handle EnOcean BLE options."""
+
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+        """Select how button events are exposed."""
+        if user_input is not None:
+            return self.async_create_entry(data=user_input)
+
+        current_mode = self.config_entry.options.get(CONF_EVENT_MODE, DEFAULT_EVENT_MODE)
+        return self.async_show_form(
+            step_id="init",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_EVENT_MODE, default=current_mode): SelectSelector(
+                        SelectSelectorConfig(
+                            options=EVENT_MODES,
+                            mode=SelectSelectorMode.LIST,
+                            translation_key=CONF_EVENT_MODE,
+                        )
+                    ),
+                }
+            ),
+        )
 
 
 def _is_press_status(status: int) -> bool:

@@ -21,5 +21,27 @@
       "commissioning_not_detected": "Nessun telegramma di commissioning ricevuto entro 2 minuti. Riprova. Se continua a non funzionare dopo più tentativi, puoi provare un reset di fabbrica. Leggi prima il disclaimer sul reset nella documentazione.",
       "invalid_commissioning": "È stato ricevuto un telegramma di commissioning, ma non è stato possibile validarlo. Riprova. Se continua a fallire, leggi il disclaimer sul reset nella documentazione prima di resettare."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Modalità eventi pulsanti",
+        "description": "Scegli come vengono esposte le pressioni dei pulsanti in Home Assistant. La modifica della modalità ricarica il dispositivo.",
+        "data": {
+          "event_mode": "Modalità eventi"
+        },
+        "data_description": {
+          "event_mode": "Semplice: ogni entità pulsante (A0, A1, B0, B1) genera un solo evento `press` per pressione; i sensori di evento e gli eventi bus enocean_ble_button_event vengono rimossi. Avanzata: tutti i tipi di evento (pressione, rilascio, pressione lunga, …), sensori di evento ed eventi bus."
+        }
+      }
+    }
+  },
+  "selector": {
+    "event_mode": {
+      "options": {
+        "advanced": "Avanzata (tutti i tipi di evento, sensori ed eventi bus)",
+        "simple": "Semplice (un evento di pressione per clic)"
+      }
+    }
   }
 }

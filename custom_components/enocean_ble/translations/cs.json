@@ -21,5 +21,27 @@
       "commissioning_not_detected": "Během 2 minut nebyl přijat commissioning telegram. Zkuste to znovu. Pokud to po více pokusech stále nefunguje, můžete zkusit tovární reset. Nejprve si přečtěte upozornění k resetu v dokumentaci.",
       "invalid_commissioning": "Byl přijat commissioning telegram, ale nepodařilo se jej ověřit. Zkuste to znovu. Pokud to opakovaně selhává, před resetem si přečtěte upozornění v dokumentaci."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Režim událostí tlačítek",
+        "description": "Zvolte, jak jsou stisky tlačítek zpřístupněny v Home Assistantu. Změna režimu zařízení znovu načte.",
+        "data": {
+          "event_mode": "Režim událostí"
+        },
+        "data_description": {
+          "event_mode": "Jednoduchý: každá entita tlačítka (A0, A1, B0, B1) vyvolá při každém stisku pouze jednu událost `press`; senzory událostí a události sběrnice enocean_ble_button_event jsou odstraněny. Pokročilý: všechny typy událostí (stisk, uvolnění, dlouhý stisk, …), senzory událostí a události sběrnice."
+        }
+      }
+    }
+  },
+  "selector": {
+    "event_mode": {
+      "options": {
+        "advanced": "Pokročilý (všechny typy událostí, senzory a události sběrnice)",
+        "simple": "Jednoduchý (jedna událost stisku na kliknutí)"
+      }
+    }
   }
 }

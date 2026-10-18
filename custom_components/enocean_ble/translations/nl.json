@@ -21,5 +21,27 @@
       "commissioning_not_detected": "Binnen 2 minuten is geen commissioning-telegram ontvangen. Probeer opnieuw. Als het na meerdere pogingen nog steeds niet werkt, kun je een fabrieksreset proberen. Lees eerst de resetdisclaimer in de documentatie.",
       "invalid_commissioning": "Er is een commissioning-telegram ontvangen, maar dit kon niet worden gevalideerd. Probeer opnieuw. Als dit blijft mislukken, lees dan eerst de resetdisclaimer in de documentatie."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Modus voor knopgebeurtenissen",
+        "description": "Kies hoe knopdrukken in Home Assistant beschikbaar worden gemaakt. Het wijzigen van de modus herlaadt het apparaat.",
+        "data": {
+          "event_mode": "Gebeurtenismodus"
+        },
+        "data_description": {
+          "event_mode": "Eenvoudig: elke knopentiteit (A0, A1, B0, B1) geeft per klik slechts één `press`-gebeurtenis; gebeurtenissensoren en enocean_ble_button_event-busgebeurtenissen worden verwijderd. Geavanceerd: alle gebeurtenistypen (indrukken, loslaten, lang indrukken, …), gebeurtenissensoren en busgebeurtenissen."
+        }
+      }
+    }
+  },
+  "selector": {
+    "event_mode": {
+      "options": {
+        "advanced": "Geavanceerd (alle gebeurtenistypen, sensoren en busgebeurtenissen)",
+        "simple": "Eenvoudig (één drukgebeurtenis per klik)"
+      }
+    }
   }
 }

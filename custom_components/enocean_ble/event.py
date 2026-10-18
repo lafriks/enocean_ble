@@ -21,10 +21,13 @@ from .const import (
     ATTR_RSSI,
     ATTR_SEQUENCE_COUNTER,
     BUTTON_ENTITY_DESCRIPTIONS,
+    CONF_EVENT_MODE,
     CONF_MAC_ADDRESS,
     DOMAIN,
+    EVENT_MODE_SIMPLE,
     INTEGRATION_NAME,
     SIGNAL_BUTTON_EVENT,
+    SIMPLE_EVENT_TYPE,
     SUPPORTED_EVENT_TYPES,
 )
 
@@ -50,13 +53,20 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up EnOcean BLE event entities."""
+    event_mode = hass.data[DOMAIN][entry.entry_id][CONF_EVENT_MODE]
+    event_types = (
+        [SIMPLE_EVENT_TYPE] if event_mode == EVENT_MODE_SIMPLE else sorted(SUPPORTED_EVENT_TYPES)
+    )
     _LOGGER.debug(
-        "event_platform_setup entry_id=%s unique_id=%s button_count=%s",
+        "event_platform_setup entry_id=%s unique_id=%s button_count=%s event_mode=%s",
         entry.entry_id,
         entry.unique_id,
         len(BUTTONS),
+        event_mode,
     )
-    async_add_entities(EnOceanBleButtonEventEntity(entry, button) for button in BUTTONS)
+    async_add_entities(
+        EnOceanBleButtonEventEntity(entry, button, event_types) for button in BUTTONS
+    )
 
 
 class EnOceanBleButtonEventEntity(EventEntity):  # type: ignore[misc]
@@ -64,12 +74,14 @@ class EnOceanBleButtonEventEntity(EventEntity):  # type: ignore[misc]
 
     _attr_has_entity_name = True
     _attr_device_class = EventDeviceClass.BUTTON
-    _attr_event_types = sorted(SUPPORTED_EVENT_TYPES)
 
-    def __init__(self, entry: ConfigEntry, button: ButtonDescription) -> None:
+    def __init__(
+        self, entry: ConfigEntry, button: ButtonDescription, event_types: list[str]
+    ) -> None:
         """Initialize the event entity."""
         self._entry = entry
         self._button_code = button.code
+        self._attr_event_types = event_types
         self._attr_name = button.name
         self._attr_unique_id = f"{entry.unique_id}_{button.code.lower()}"
 
@@ -120,7 +132,7 @@ class EnOceanBleButtonEventEntity(EventEntity):  # type: ignore[misc]
             return
 
         event_type = payload.get(ATTR_EVENT_TYPE)
-        if not isinstance(event_type, str):
+        if not isinstance(event_type, str) or event_type not in self._attr_event_types:
             _LOGGER.debug(
                 "event_entity_payload_ignored entry_id=%s unique_id=%s button=%s reason=invalid_event_type payload_event_type=%s",
                 self._entry.entry_id,

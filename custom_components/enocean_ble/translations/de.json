@@ -21,5 +21,27 @@
       "commissioning_not_detected": "Innerhalb von 2 Minuten wurde kein Kommissionierungs-Telegramm empfangen. Versuchen Sie es erneut. Wenn es nach mehreren Versuchen weiterhin nicht funktioniert, können Sie einen Werksreset versuchen. Lesen Sie vorher den Reset-Hinweis in der Dokumentation.",
       "invalid_commissioning": "Ein Kommissionierungs-Telegramm wurde empfangen, konnte aber nicht validiert werden. Versuchen Sie es erneut. Wenn dies weiterhin fehlschlägt, lesen Sie vor einem Reset den Hinweis in der Dokumentation."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Tasten-Ereignismodus",
+        "description": "Wählen Sie, wie Tastendrücke in Home Assistant bereitgestellt werden. Eine Änderung des Modus lädt das Gerät neu.",
+        "data": {
+          "event_mode": "Ereignismodus"
+        },
+        "data_description": {
+          "event_mode": "Einfach: Jede Tasten-Entität (A0, A1, B0, B1) löst pro Tastendruck nur ein `press`-Ereignis aus; Ereignissensoren und enocean_ble_button_event-Bus-Ereignisse werden entfernt. Erweitert: alle Ereignistypen (Drücken, Loslassen, langes Drücken, …), Ereignissensoren und Bus-Ereignisse."
+        }
+      }
+    }
+  },
+  "selector": {
+    "event_mode": {
+      "options": {
+        "advanced": "Erweitert (alle Ereignistypen, Sensoren und Bus-Ereignisse)",
+        "simple": "Einfach (ein Drück-Ereignis pro Tastendruck)"
+      }
+    }
   }
 }

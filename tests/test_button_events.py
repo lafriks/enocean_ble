@@ -6,7 +6,7 @@ from types import SimpleNamespace
 from typing import Any
 from unittest.mock import MagicMock, patch
 
-from custom_components.enocean_ble import _emit_button_event
+from custom_components.enocean_ble import _emit_button_event, _emit_simple_button_event
 from custom_components.enocean_ble.const import (
     LONG_PRESS_SECONDS,
     RELEASE_TIMEOUT_SECONDS,
@@ -43,7 +43,7 @@ def _make_env() -> tuple[Any, Any, dict[str, Any], dict[int, tuple[float, Any, M
 
     hass = MagicMock()
     entry = SimpleNamespace(entry_id="test")
-    entry_data: dict[str, Any] = {"buttons": {}}
+    entry_data: dict[str, Any] = {"buttons": {}, "last_sequence_counter": -1}
     return hass, entry, entry_data, pending, fake_call_later
 
 
@@ -55,23 +55,28 @@ def _emit(
     events: list[str],
     fake_call_later: Any,
     seq: int | None = None,
+    button: str = _BUTTON,
+    simple: bool = False,
 ) -> None:
     """Emit one button event, capturing fired event_types into events list."""
     seq_val: int = seq if seq is not None else _SEQ
+    emit = _emit_simple_button_event if simple else _emit_button_event
     with (
         patch("homeassistant.helpers.event.async_call_later", side_effect=fake_call_later),
         patch("custom_components.enocean_ble._fire_event", side_effect=lambda **kw: events.append(kw["event_type"])),
     ):
-        _emit_button_event(
+        emit(
             hass=hass,
             entry=entry,
             entry_data=entry_data,
             event_type=event_type,
-            button=_BUTTON,
+            button=button,
             sequence_counter=seq_val,
             rssi=_RSSI,
             mac_address=_MAC,
         )
+    # Mirrors _process_advertisement, which updates the device-wide counter after emitting.
+    entry_data["last_sequence_counter"] = seq_val
 
 
 def _fire_pending(
@@ -275,3 +280,73 @@ class TestOrphanRelease:
         # Gap = 7 - 2 = 5 ≠ 2 → stale
         _emit(hass, entry, entry_data, "release", events, fake_call_later, seq=7)
         assert events == ["orphan_release"]
+
+    def test_orphan_coherent_after_other_button_fires_single_press(self) -> None:
+        """Sequence counter is device-wide: coherence must hold across different buttons."""
+        hass, entry, entry_data, _pending, fake_call_later = _make_env()
+        events: list[str] = []
+
+        # B0 used long ago, then a full A0 cycle at seq 10/11
+        _emit(hass, entry, entry_data, "press", events, fake_call_later, seq=1, button="B0")
+        _emit(hass, entry, entry_data, "release", events, fake_call_later, seq=2, button="B0")
+        _emit(hass, entry, entry_data, "press", events, fake_call_later, seq=10)
+        _emit(hass, entry, entry_data, "release", events, fake_call_later, seq=11)
+        events.clear()
+
+        # B0 press at seq=12 is lost; orphan release at seq=13 (gap to device counter = 2)
+        _emit(hass, entry, entry_data, "release", events, fake_call_later, seq=13, button="B0")
+        assert events == ["orphan_release", "single_press"]
+
+
+# ---------------------------------------------------------------------------
+# Simple mode
+# ---------------------------------------------------------------------------
+
+class TestSimpleMode:
+    def test_short_press_fires_single_press_event(self) -> None:
+        hass, entry, entry_data, pending, fake_call_later = _make_env()
+        events: list[str] = []
+
+        _emit(hass, entry, entry_data, "press", events, fake_call_later, seq=1, simple=True)
+        _emit(hass, entry, entry_data, "release", events, fake_call_later, seq=2, simple=True)
+        assert events == ["press"]
+        assert len(pending) == 0  # no timers in simple mode
+
+    def test_lost_press_fires_on_release(self) -> None:
+        hass, entry, entry_data, _pending, fake_call_later = _make_env()
+        events: list[str] = []
+
+        _emit(hass, entry, entry_data, "press", events, fake_call_later, seq=1, simple=True)
+        _emit(hass, entry, entry_data, "release", events, fake_call_later, seq=2, simple=True)
+        # Press at seq=3 lost
+        _emit(hass, entry, entry_data, "release", events, fake_call_later, seq=4, simple=True)
+        assert events == ["press", "press"]
+
+    def test_lost_press_fires_after_other_buttons_and_gaps(self) -> None:
+        hass, entry, entry_data, _pending, fake_call_later = _make_env()
+        events: list[str] = []
+
+        _emit(hass, entry, entry_data, "press", events, fake_call_later, seq=1, simple=True)
+        _emit(hass, entry, entry_data, "release", events, fake_call_later, seq=2, simple=True)
+        _emit(hass, entry, entry_data, "press", events, fake_call_later, seq=3, button="B0", simple=True)
+        _emit(hass, entry, entry_data, "release", events, fake_call_later, seq=4, button="B0", simple=True)
+        # A0 press at seq=8 lost, several telegrams before it lost too
+        _emit(hass, entry, entry_data, "release", events, fake_call_later, seq=9, simple=True)
+        assert events == ["press", "press", "press"]
+
+    def test_first_release_without_history_fires(self) -> None:
+        hass, entry, entry_data, _pending, fake_call_later = _make_env()
+        events: list[str] = []
+
+        _emit(hass, entry, entry_data, "release", events, fake_call_later, seq=5, simple=True)
+        assert events == ["press"]
+
+    def test_lost_release_does_not_block_next_press(self) -> None:
+        hass, entry, entry_data, _pending, fake_call_later = _make_env()
+        events: list[str] = []
+
+        _emit(hass, entry, entry_data, "press", events, fake_call_later, seq=1, simple=True)
+        # Release at seq=2 lost
+        _emit(hass, entry, entry_data, "press", events, fake_call_later, seq=3, simple=True)
+        _emit(hass, entry, entry_data, "release", events, fake_call_later, seq=4, simple=True)
+        assert events == ["press", "press"]
