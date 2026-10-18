@@ -100,7 +100,12 @@ async def async_setup_entry(hass: Any, entry: Any) -> bool:
         async_register_callback(
             hass,
             _async_handle_advertisement,
-            {"address": mac_address, "manufacturer_id": ENOCEAN_MANUFACTURER_ID},
+            # Switches only broadcast; also accept advertisements from passive (non-connectable) scanners.
+            {
+                "address": mac_address,
+                "manufacturer_id": ENOCEAN_MANUFACTURER_ID,
+                "connectable": False,
+            },
             BluetoothScanningMode.PASSIVE,
         )
     )

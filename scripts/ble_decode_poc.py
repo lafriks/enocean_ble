@@ -18,7 +18,7 @@ def main() -> int:
     parsed = parse_data_telegram(telegram, mac_address=args.mac, security_key_hex=args.key)
 
     print(f"sequence_counter={parsed.sequence_counter}")
-    print(f"button={parsed.button}")
+    print(f"buttons={','.join(parsed.buttons)}")
     print(f"event_type={parsed.event_type}")
     return 0
 

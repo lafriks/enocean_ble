@@ -47,3 +47,11 @@ async def test_create_entry_nominal_does_not_log_abandon(caplog: Any) -> None:
 
     text = caplog.text
     assert "event=FLOW_TERMINATED_WITHOUT_ENTRY" not in text
+
+
+async def test_remove_without_entry_does_not_warn(caplog: Any) -> None:
+    caplog.set_level(logging.DEBUG)
+    flow = _build_flow()
+    flow.async_remove()
+
+    assert not [r for r in caplog.records if r.levelno >= logging.WARNING]

@@ -3,7 +3,8 @@
   "name": "EnOcean BLE Switches",
   "bluetooth": [
     {
-      "manufacturer_id": 986
+      "manufacturer_id": 986,
+      "connectable": false
     }
   ],
   "codeowners": [

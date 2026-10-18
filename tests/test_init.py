@@ -143,7 +143,11 @@ async def test_bluetooth_callback_is_filtered_by_address() -> None:
     with patch("homeassistant.components.bluetooth.async_register_callback") as register:
         await _setup(None)
     matcher = register.call_args.args[2]
-    assert matcher == {"address": _MAC, "manufacturer_id": ENOCEAN_MANUFACTURER_ID}
+    assert matcher == {
+        "address": _MAC,
+        "manufacturer_id": ENOCEAN_MANUFACTURER_ID,
+        "connectable": False,
+    }
 
 
 async def test_advertisement_after_unload_is_ignored() -> None:

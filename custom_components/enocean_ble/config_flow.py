@@ -447,7 +447,7 @@ class EnOceanBleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         latest_payload: bytes | None = None
         latest_time: float | None = None
 
-        for info in async_discovered_service_info(self.hass):
+        for info in async_discovered_service_info(self.hass, connectable=False):
             if info.address.upper() != mac_address:
                 continue
             info_time = float(getattr(info, "time", 0.0) or 0.0)
@@ -601,7 +601,7 @@ class EnOceanBleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     def _max_adv_time_for_mac(self, mac_address: str) -> float:
         """Return latest known advertisement timestamp for MAC."""
         max_time = 0.0
-        for info in async_discovered_service_info(self.hass):
+        for info in async_discovered_service_info(self.hass, connectable=False):
             if info.address.upper() != mac_address:
                 continue
             max_time = max(max_time, float(getattr(info, "time", 0.0) or 0.0))
@@ -647,7 +647,7 @@ class EnOceanBleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     def _recent_payload_snapshot(self, mac_address: str, *, max_items: int) -> list[str]:
         """Return a compact snapshot of recent payloads for debug analysis."""
         items: list[tuple[float, str]] = []
-        for info in async_discovered_service_info(self.hass):
+        for info in async_discovered_service_info(self.hass, connectable=False):
             if info.address.upper() != mac_address:
                 continue
             payload = info.manufacturer_data.get(ENOCEAN_MANUFACTURER_ID)
@@ -785,19 +785,14 @@ class EnOceanBleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             cause="UNKNOWN",
             confidence="low",
         )
-        if self._pending_mac is None:
-            _LOGGER.debug(
-                "%s FLOW_TERMINATED_WITHOUT_ENTRY flow_id=%s mac=None (flow never started)",
-                FLOW_TAG,
-                getattr(self, "flow_id", "unknown"),
-            )
-        else:
-            _LOGGER.warning(
-                "%s FLOW_TERMINATED_WITHOUT_ENTRY flow_id=%s mac=%s cause=UNKNOWN confidence=low",
-                FLOW_TAG,
-                getattr(self, "flow_id", "unknown"),
-                self._pending_mac,
-            )
+        # Debug only: ignoring or closing a discovered device ends the flow this way too.
+        # Commissioning failures are already logged as COMMISSIONING_TIMEOUT/COMMISSIONING_ERROR.
+        _LOGGER.debug(
+            "%s FLOW_TERMINATED_WITHOUT_ENTRY flow_id=%s mac=%s cause=UNKNOWN confidence=low",
+            FLOW_TAG,
+            getattr(self, "flow_id", "unknown"),
+            self._pending_mac,
+        )
 
 
 class EnOceanBleOptionsFlow(config_entries.OptionsFlow):
