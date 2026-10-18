@@ -23,6 +23,15 @@ Commission one EnOcean BLE switch from Bluetooth discovery and create one config
 - Shows final confirmation once commissioning data is ready.
 - User presses `Submit` to create the config entry.
 
+## Options Flow
+
+`init` step with a single `event_mode` select (`advanced` default, `simple`), stored in `entry.options`.
+
+- The update listener reloads the entry only when `event_mode` changes. Data updates (e.g. auto-commissioning
+  writing `security_key`) do not trigger a reload.
+- Unload uses the platforms loaded at setup, because `entry.options` already holds the new mode during reload.
+- Texts come from translation keys `options.step.init.*` and `selector.event_mode.options.*`.
+
 ## Important Behavior
 
 - If a commissioning payload is already available for the active flow context, the flow can move to `bluetooth_confirm` immediately.

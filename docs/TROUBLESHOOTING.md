@@ -15,9 +15,23 @@
 
 ## Automations do not trigger
 
-- Prefer state triggers on `sensor.<device>_<button>_event` for UX simplicity.
-- Or use event triggers on `enocean_ble_button_event` for full payload filtering.
-- Verify current event payload with Developer Tools -> Events.
+- Check the device's event mode (Settings -> Devices & services -> EnOcean BLE Switches -> Configure).
+- `simple` mode:
+  - Use state triggers on `event.<device>_<button>`; every state change is one click.
+  - Bus events and `sensor.<device>_<button>_event` entities do not exist in this mode; automations using them stop triggering.
+- `advanced` mode:
+  - Prefer state triggers on `sensor.<device>_<button>_event` for UX simplicity.
+  - Or use event triggers on `enocean_ble_button_event` for full payload filtering.
+  - Verify current event payload with Developer Tools -> Events.
+
+## Automation runs several times per click
+
+- In `advanced` mode the event entity changes state for every event type (`press`, `single_press`, `release`, ...).
+- Switch the device to `simple` mode, or filter on the `event_type` attribute.
+
+## Sensor entities disappeared
+
+- Switching a device to `simple` mode removes its event sensors. Switching back to `advanced` recreates them.
 
 ## Missing logs
 

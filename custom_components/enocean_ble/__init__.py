@@ -50,7 +50,9 @@ async def async_setup(hass: Any, config: dict[str, Any]) -> bool:
 async def async_setup_entry(hass: Any, entry: Any) -> bool:
     """Set up EnOcean BLE from a config entry."""
     from homeassistant.components.bluetooth import (
+        BluetoothChange,
         BluetoothScanningMode,
+        BluetoothServiceInfoBleak,
         async_register_callback,
     )
 
@@ -81,7 +83,9 @@ async def async_setup_entry(hass: Any, entry: Any) -> bool:
     if event_mode == EVENT_MODE_SIMPLE:
         _async_remove_unused_entities(hass, entry, platforms)
 
-    def _async_handle_advertisement(service_info: Any, _change: int) -> None:
+    def _async_handle_advertisement(
+        service_info: BluetoothServiceInfoBleak, _change: BluetoothChange
+    ) -> None:
         _process_advertisement(hass, entry, service_info)
 
     entry.async_on_unload(
@@ -505,7 +509,7 @@ def _fire_event(
 
     fire_bus_events = get_event_mode(entry) != EVENT_MODE_SIMPLE
 
-    @callback  # type: ignore[misc]
+    @callback
     def _async_dispatch() -> None:
         async_dispatcher_send(hass, SIGNAL_BUTTON_EVENT.format(entry_id=entry.entry_id), payload)
         if not fire_bus_events:

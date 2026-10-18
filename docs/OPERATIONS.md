@@ -2,7 +2,12 @@
 
 ## Local Quality Checks
 
+Requires Python 3.14 (latest `pytest-homeassistant-custom-component`):
+
 ```bash
+uv venv -p 3.14 .venv && source .venv/bin/activate
+uv pip install -r requirements_dev.txt
+pre-commit install
 ruff check .
 mypy custom_components tests
 pytest -q
@@ -31,6 +36,11 @@ ssh 172.30.46.1 "sudo mkdir -p /data/home_assistant/custom_components/enocean_bl
 ```
 
 ## Post-Deploy Validation
+
+After changing the event mode (or code touching it), check on the device page:
+
+- `advanced`: 4 event entities + 4 event sensors, bus events visible in Developer Tools -> Events.
+- `simple`: 4 event entities only, `event_types` attribute is `["press"]`, one state change per click.
 
 ```bash
 ssh 172.30.46.1 "sudo docker logs --tail 200 ha_test_8124 2>&1 | grep -i -E 'enocean_ble|FLOW_TRACE_V3|commissioning'"

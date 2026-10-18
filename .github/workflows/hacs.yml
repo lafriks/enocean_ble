@@ -4,13 +4,24 @@ on:
   push:
     branches: [main, dev]
   pull_request:
+  workflow_dispatch:
+  # Catch breakage from new HACS / Home Assistant validation rules between commits.
+  schedule:
+    - cron: "0 3 * * 1"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   hacs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: HACS validation
         uses: hacs/action@22.5.0
         with:

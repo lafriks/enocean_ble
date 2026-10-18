@@ -13,8 +13,8 @@ from homeassistant.components.bluetooth import (
     BluetoothServiceInfoBleak,
     async_discovered_service_info,
 )
+from homeassistant.config_entries import ConfigFlowResult
 from homeassistant.core import callback
-from homeassistant.data_entry_flow import FlowResult
 from homeassistant.helpers.selector import (
     SelectSelector,
     SelectSelectorConfig,
@@ -42,13 +42,13 @@ FLOW_TRACE_TAG = "FLOW_TRACE_V3"
 COMMISSIONING_TIMEOUT = 120.0
 
 
-class EnOceanBleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: ignore[misc,call-arg]
+class EnOceanBleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for EnOcean BLE."""
 
     VERSION = 1
 
     @staticmethod
-    @callback  # type: ignore[misc]
+    @callback
     def async_get_options_flow(
         config_entry: config_entries.ConfigEntry,
     ) -> EnOceanBleOptionsFlow:
@@ -104,7 +104,7 @@ class EnOceanBleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: i
         self._log_terminal_without_entry()
         self._cancel_stage_task(reason="flow_removed")
 
-    async def async_step_bluetooth(self, discovery_info: BluetoothServiceInfoBleak) -> FlowResult:
+    async def async_step_bluetooth(self, discovery_info: BluetoothServiceInfoBleak) -> ConfigFlowResult:
         """Handle Bluetooth discovery and start commissioning."""
         discovered_mac = discovery_info.address.upper()
         manufacturer_data = discovery_info.manufacturer_data.get(ENOCEAN_MANUFACTURER_ID)
@@ -154,7 +154,7 @@ class EnOceanBleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: i
 
         return await self.async_step_commissioning()
 
-    async def async_step_commissioning(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+    async def async_step_commissioning(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Show commissioning instructions and wait for L26 telegram."""
         # If the commissioning telegram is already known (ex: cached discovery payload),
         # continue to the explicit user confirmation step.
@@ -169,7 +169,7 @@ class EnOceanBleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: i
 
     async def async_step_bluetooth_confirm(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Ask for explicit user confirmation before creating the entry."""
         if self._pending_mac is None or self._pending_security_key is None:
             return self.async_show_form(
@@ -232,7 +232,7 @@ class EnOceanBleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: i
         progress_action: str,
         coro: Any,
         next_step_id: str,
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Run one monitored stage with automatic progression."""
         if self._pending_mac is None:
             return self.async_abort(reason="no_bluetooth_discovery")
@@ -778,10 +778,10 @@ class EnOceanBleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):  # type: i
             )
 
 
-class EnOceanBleOptionsFlow(config_entries.OptionsFlow):  # type: ignore[misc]
+class EnOceanBleOptionsFlow(config_entries.OptionsFlow):
     """Handle EnOcean BLE options."""
 
-    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Select how button events are exposed."""
         if user_input is not None:
             return self.async_create_entry(data=user_input)
@@ -789,7 +789,8 @@ class EnOceanBleOptionsFlow(config_entries.OptionsFlow):  # type: ignore[misc]
         current_mode = self.config_entry.options.get(CONF_EVENT_MODE, DEFAULT_EVENT_MODE)
         return self.async_show_form(
             step_id="init",
-            data_schema=vol.Schema(
+            # Home Assistant aliases voluptuous to probatio at runtime; mypy sees the real voluptuous.
+            data_schema=vol.Schema(  # type: ignore[arg-type]
                 {
                     vol.Required(CONF_EVENT_MODE, default=current_mode): SelectSelector(
                         SelectSelectorConfig(

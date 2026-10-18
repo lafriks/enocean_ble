@@ -13,16 +13,15 @@ Provide reliable passive BLE reception of button telegrams and expose them in Ho
 - Discovery-driven commissioning flow.
 - Commissioning key extraction from `len=26` telegram.
 - Runtime telegram parsing and MIC validation.
-- Bus events:
-- `enocean_ble_button_event` (recommended)
-- `enocean_ble_button_action` (legacy)
 - Event entities for `A0`, `A1`, `B0`, `B1`.
-- Sensor entities for latest button event per button.
-- Event types:
-- `press`
-- `release`
-- `long_press`
-- `long_release`
+- Per-device event mode, selected in the options flow (`event_mode`):
+- `advanced` (default):
+  - event types `press`, `release`, `orphan_release`, `release_timeout`, `long_press`, `long_release`, `single_press`
+  - sensor entities for latest button event per button
+  - bus events `enocean_ble_button_event` (recommended) and `enocean_ble_button_action` (legacy)
+- `simple`:
+  - single event type `press`, fired exactly once per physical click
+  - no sensor entities, no bus events
 
 ## Non-Goals / Limits
 

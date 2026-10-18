@@ -69,7 +69,7 @@ async def async_setup_entry(
     )
 
 
-class EnOceanBleButtonEventEntity(EventEntity):  # type: ignore[misc]
+class EnOceanBleButtonEventEntity(EventEntity):
     """Event entity for one physical EnOcean BLE rocker button."""
 
     _attr_has_entity_name = True
@@ -109,7 +109,7 @@ class EnOceanBleButtonEventEntity(EventEntity):  # type: ignore[misc]
         )
         self.async_on_remove(async_dispatcher_connect(self.hass, signal, self._async_handle_button_event))
 
-    @callback  # type: ignore[misc]
+    @callback
     def _async_handle_button_event(self, payload: dict[str, Any]) -> None:
         """Forward event updates to this button entity."""
         payload_button = payload.get(ATTR_BUTTON)
