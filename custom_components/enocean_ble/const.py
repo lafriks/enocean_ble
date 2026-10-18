@@ -22,7 +22,8 @@ ENOCEAN_MAC_PREFIX = "E2:15:"
 EVENT_BUTTON_EVENT = "enocean_ble_button_event"
 # Backward compatibility with existing automations.
 EVENT_BUTTON_ACTION = "enocean_ble_button_action"
-SIGNAL_BUTTON_EVENT = "enocean_ble_button_event_{entry_id}"
+# One signal per button, so only the matching entities receive an event.
+SIGNAL_BUTTON_EVENT = "enocean_ble_button_event_{entry_id}_{button}"
 
 ATTR_BUTTON = "button"
 ATTR_EVENT_TYPE = "event_type"

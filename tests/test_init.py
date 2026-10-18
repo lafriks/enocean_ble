@@ -7,6 +7,7 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from custom_components.enocean_ble import (
+    _fire_event,
     _process_advertisement,
     async_remove_entry,
     async_setup,
@@ -157,3 +158,22 @@ async def test_advertisement_after_unload_is_ignored() -> None:
     with patch("custom_components.enocean_ble._emit_button_event") as emit:
         _process_advertisement(hass, entry, _service_info(1))
     emit.assert_not_called()
+
+
+def test_fire_event_dispatches_per_button_signal() -> None:
+    hass = MagicMock()
+    entry = _entry()
+    with patch("homeassistant.helpers.dispatcher.async_dispatcher_send") as send:
+        _fire_event(
+            hass=hass,
+            entry=entry,
+            button="B1",
+            event_type="press",
+            sequence_counter=5,
+            rssi=-60,
+            mac_address=_MAC,
+        )
+        hass.add_job.call_args.args[0]()
+
+    assert send.call_args.args[1] == "enocean_ble_button_event_entry1_B1"
+    assert send.call_args.args[2]["button"] == "B1"

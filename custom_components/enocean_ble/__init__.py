@@ -615,7 +615,9 @@ def _fire_event(
 
     @callback
     def _async_dispatch() -> None:
-        async_dispatcher_send(hass, SIGNAL_BUTTON_EVENT.format(entry_id=entry.entry_id), payload)
+        async_dispatcher_send(
+            hass, SIGNAL_BUTTON_EVENT.format(entry_id=entry.entry_id, button=button), payload
+        )
         if not fire_bus_events:
             return
         hass.bus.async_fire(
@@ -643,7 +645,7 @@ def _fire_event(
         event_type,
         sequence_counter,
         rssi,
-        SIGNAL_BUTTON_EVENT.format(entry_id=entry.entry_id),
+        SIGNAL_BUTTON_EVENT.format(entry_id=entry.entry_id, button=button),
     )
     hass.add_job(_async_dispatch)
 
