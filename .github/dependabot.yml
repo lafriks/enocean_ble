@@ -8,3 +8,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      # Pinned by pytest-homeassistant-custom-component; bump that package instead.
+      - dependency-name: pytest
+      - dependency-name: pytest-asyncio
+      - dependency-name: cryptography
