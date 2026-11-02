@@ -6,28 +6,21 @@ import logging
 from typing import Any
 
 from homeassistant.components.event import EventDeviceClass, EventEntity
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import (
-    BUTTONS,
-    CONF_MAC_ADDRESS,
-    DOMAIN,
-    EVENT_TYPE_PRESS,
-    INTEGRATION_NAME,
-    SIGNAL_BUTTON_EVENT,
-)
+from . import EnOceanBleConfigEntry
+from .const import BUTTONS, DOMAIN, EVENT_TYPE_PRESS, INTEGRATION_NAME, SIGNAL_BUTTON_EVENT
 
 _LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: EnOceanBleConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up one event entity per button."""
@@ -46,22 +39,17 @@ class EnOceanBleButtonEventEntity(EventEntity):
     _attr_has_entity_name = True
     _attr_device_class = EventDeviceClass.BUTTON
 
-    def __init__(self, entry: ConfigEntry, button: str) -> None:
+    def __init__(self, entry: EnOceanBleConfigEntry, button: str) -> None:
         """Initialize the event entity."""
         self._attr_event_types = [EVENT_TYPE_PRESS]
         self._entry = entry
         self._button = button
         self._attr_name = button
         self._attr_unique_id = f"{entry.unique_id}_{button.lower()}"
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Describe the parent EnOcean device."""
-        mac_address = self._entry.data[CONF_MAC_ADDRESS]
-        return DeviceInfo(
-            identifiers={(DOMAIN, self._entry.entry_id)},
-            connections={(dr.CONNECTION_BLUETOOTH, mac_address)},
-            name=self._entry.title,
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, entry.entry_id)},
+            connections={(dr.CONNECTION_BLUETOOTH, entry.runtime_data.mac_address)},
+            name=entry.title,
             manufacturer="EnOcean",
             model=INTEGRATION_NAME,
         )

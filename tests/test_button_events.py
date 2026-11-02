@@ -6,23 +6,24 @@ from types import SimpleNamespace
 from typing import Any
 from unittest.mock import MagicMock, patch
 
-from custom_components.enocean_ble import _emit_button_event
+from custom_components.enocean_ble import EnOceanBleData, _emit_button_event
 
 _MAC = "E2:15:00:03:C6:D7"
 
 
-def _env() -> tuple[Any, Any, dict[str, Any], list[tuple[str, int]]]:
-    """Return (hass, entry, entry_data, fired) where fired collects (button, sequence_counter)."""
-    return MagicMock(), SimpleNamespace(entry_id="test"), {"last_press_seq": {}}, []
+def _env() -> tuple[Any, Any, EnOceanBleData, list[tuple[str, int]]]:
+    """Return (hass, entry, data, fired) where fired collects (button, sequence_counter)."""
+    data = EnOceanBleData(mac_address=_MAC, security_key="", store=MagicMock(), save_delay=5.0)
+    return MagicMock(), SimpleNamespace(entry_id="test"), data, []
 
 
 def _emit(
-    env: tuple[Any, Any, dict[str, Any], list[tuple[str, int]]],
+    env: tuple[Any, Any, EnOceanBleData, list[tuple[str, int]]],
     event_type: str,
     seq: int,
     button: str = "A0",
 ) -> None:
-    hass, entry, entry_data, fired = env
+    hass, entry, data, fired = env
     with patch(
         "custom_components.enocean_ble._fire_event",
         side_effect=lambda **kw: fired.append((kw["button"], kw["sequence_counter"])),
@@ -30,7 +31,7 @@ def _emit(
         _emit_button_event(
             hass=hass,
             entry=entry,
-            entry_data=entry_data,
+            data=data,
             button=button,
             event_type=event_type,
             sequence_counter=seq,

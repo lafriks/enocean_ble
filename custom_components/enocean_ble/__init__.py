@@ -4,7 +4,21 @@ from __future__ import annotations
 
 import hashlib
 import logging
+from dataclasses import dataclass, field
 from typing import Any
+
+from homeassistant.components.bluetooth import (
+    BluetoothCallbackMatcher,
+    BluetoothChange,
+    BluetoothScanningMode,
+    BluetoothServiceInfoBleak,
+    async_register_callback,
+)
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.dispatcher import async_dispatcher_send
+from homeassistant.helpers.storage import Store
 
 from .const import (
     ATTR_MAC_ADDRESS,
@@ -33,51 +47,51 @@ from .parser import parse_commissioning_telegram, parse_data_telegram
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup(hass: Any, config: dict[str, Any]) -> bool:
-    """Set up EnOcean BLE integration."""
-    hass.data.setdefault(DOMAIN, {})
-    return True
+@dataclass
+class EnOceanBleData:
+    """Runtime data of one switch."""
+
+    mac_address: str
+    security_key: str
+    store: Store[dict[str, Any]]
+    # Delay before the replay counter is written to disk (0 = strict replay protection).
+    save_delay: float
+    # Highest sequence counter accepted so far; telegrams at or below it are replays.
+    last_sequence_counter: int = -1
+    # Per button: sequence counter of the last press telegram seen.
+    last_press_seq: dict[str, int] = field(default_factory=dict)
 
 
-async def async_setup_entry(hass: Any, entry: Any) -> bool:
-    """Set up EnOcean BLE from a config entry."""
-    from homeassistant.components.bluetooth import (
-        BluetoothChange,
-        BluetoothScanningMode,
-        BluetoothServiceInfoBleak,
-        async_register_callback,
-    )
+type EnOceanBleConfigEntry = ConfigEntry[EnOceanBleData]
 
-    hass.data.setdefault(DOMAIN, {})
 
-    mac_address = entry.data[CONF_MAC_ADDRESS]
-    security_key = entry.data.get(CONF_SECURITY_KEY, "")
+async def async_setup_entry(hass: HomeAssistant, entry: EnOceanBleConfigEntry) -> bool:
+    """Set up one switch from a config entry."""
+    mac_address: str = entry.data[CONF_MAC_ADDRESS]
+    security_key: str = entry.data.get(CONF_SECURITY_KEY, "")
 
     store = _sequence_store(hass, entry)
     stored = await store.async_load() or {}
-    last_sequence_counter = int(stored.get("last_sequence_counter", -1))
-
-    save_delay = _save_delay(entry)
-    hass.data[DOMAIN][entry.entry_id] = {
-        CONF_MAC_ADDRESS: mac_address,
-        CONF_SECURITY_KEY: security_key,
-        "store": store,
-        "save_delay": save_delay,
-        "last_sequence_counter": last_sequence_counter,
-        # Per button: sequence counter of the last press telegram seen. Restored too, so a
-        # release arriving right after a reload still pairs with its press.
-        "last_press_seq": {k: int(v) for k, v in stored.get("last_press_seq", {}).items()},
-    }
+    data = EnOceanBleData(
+        mac_address=mac_address,
+        security_key=security_key,
+        store=store,
+        save_delay=_save_delay(entry),
+        last_sequence_counter=int(stored.get("last_sequence_counter", -1)),
+        last_press_seq={k: int(v) for k, v in stored.get("last_press_seq", {}).items()},
+    )
+    entry.runtime_data = data
     _LOGGER.debug(
         "setup_entry entry_id=%s mac=%s last_sequence_counter=%s save_delay=%s security_key_present=%s security_key_fingerprint=%s",
         entry.entry_id,
         mac_address,
-        last_sequence_counter,
-        save_delay,
+        data.last_sequence_counter,
+        data.save_delay,
         bool(security_key),
         _fingerprint_key(security_key),
     )
 
+    @callback
     def _async_handle_advertisement(
         service_info: BluetoothServiceInfoBleak, _change: BluetoothChange
     ) -> None:
@@ -88,60 +102,42 @@ async def async_setup_entry(hass: Any, entry: Any) -> bool:
             hass,
             _async_handle_advertisement,
             # Switches only broadcast; also accept advertisements from passive (non-connectable) scanners.
-            {
-                "address": mac_address,
-                "manufacturer_id": ENOCEAN_MANUFACTURER_ID,
-                "connectable": False,
-            },
+            BluetoothCallbackMatcher(
+                address=mac_address,
+                manufacturer_id=ENOCEAN_MANUFACTURER_ID,
+                connectable=False,
+            ),
             BluetoothScanningMode.PASSIVE,
         )
     )
-    entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-
-    _LOGGER.info("EnOcean BLE device configured: %s", mac_address)
     return True
 
 
-def _save_delay(entry: Any) -> float:
+def _save_delay(entry: ConfigEntry) -> float:
     """Return how long to wait before writing the replay counter to disk."""
     strict = entry.options.get(CONF_STRICT_REPLAY_PROTECTION, DEFAULT_STRICT_REPLAY_PROTECTION)
     return STORAGE_SAVE_DELAY_STRICT_SECONDS if strict else STORAGE_SAVE_DELAY_SECONDS
 
 
-async def _async_update_listener(hass: Any, entry: Any) -> None:
-    """Reload the entry when an option changes."""
-    entry_data = hass.data[DOMAIN].get(entry.entry_id)
-    # Data updates (auto-commissioning writing the key) also land here; only reload on option change.
-    if entry_data is None or entry_data["save_delay"] == _save_delay(entry):
-        return
-    await hass.config_entries.async_reload(entry.entry_id)
-
-
-def _sequence_store(hass: Any, entry: Any) -> Any:
-    """Return the store holding the last accepted sequence counter of an entry."""
-    from homeassistant.helpers.storage import Store
-
+def _sequence_store(hass: HomeAssistant, entry: ConfigEntry) -> Store[dict[str, Any]]:
+    """Return the store holding the replay counter of an entry."""
     return Store(hass, STORAGE_VERSION, f"{DOMAIN}.{entry.entry_id}")
 
 
-def _sequence_data(entry_data: dict[str, Any]) -> dict[str, Any]:
+def _sequence_data(data: EnOceanBleData) -> dict[str, Any]:
     return {
-        "last_sequence_counter": int(entry_data["last_sequence_counter"]),
-        "last_press_seq": dict(entry_data["last_press_seq"]),
+        "last_sequence_counter": data.last_sequence_counter,
+        "last_press_seq": dict(data.last_press_seq),
     }
 
 
-def _schedule_sequence_save(entry_data: dict[str, Any]) -> None:
-    store = entry_data.get("store")
-    if store is not None:
-        store.async_delay_save(lambda: _sequence_data(entry_data), entry_data["save_delay"])
+def _schedule_sequence_save(data: EnOceanBleData) -> None:
+    data.store.async_delay_save(lambda: _sequence_data(data), data.save_delay)
 
 
-async def async_migrate_entry(hass: Any, entry: Any) -> bool:
+async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Migrate config entries created by older versions."""
-    from homeassistant.helpers import entity_registry as er
-
     if entry.version > CONFIG_ENTRY_VERSION:
         # Created by a newer version; downgrades are not supported.
         return False
@@ -164,18 +160,17 @@ async def async_migrate_entry(hass: Any, entry: Any) -> bool:
 
 
 def _process_advertisement(
-    hass: Any,
-    entry: Any,
-    service_info: Any,
+    hass: HomeAssistant,
+    entry: EnOceanBleConfigEntry,
+    service_info: BluetoothServiceInfoBleak,
 ) -> None:
     """Process BLE advertisements and emit Home Assistant button events."""
-    entry_data = hass.data.get(DOMAIN, {}).get(entry.entry_id)
-    if entry_data is None:
-        # Entry data is removed on unload before Home Assistant unregisters this callback.
+    data: EnOceanBleData | None = getattr(entry, "runtime_data", None)
+    if data is None:
+        # Home Assistant drops runtime_data on unload before unregistering this callback.
         _LOGGER.debug("adv_ignored entry_id=%s reason=entry_unloaded", entry.entry_id)
         return
-    configured_mac = str(entry_data[CONF_MAC_ADDRESS]).upper()
-    manufacturer_ids = sorted(service_info.manufacturer_data.keys())
+    configured_mac = data.mac_address.upper()
     manufacturer_data = service_info.manufacturer_data.get(ENOCEAN_MANUFACTURER_ID)
     payload_len = len(manufacturer_data) if manufacturer_data is not None else 0
     _LOGGER.debug(
@@ -184,7 +179,7 @@ def _process_advertisement(
         configured_mac,
         service_info.address.upper(),
         service_info.rssi,
-        manufacturer_ids,
+        sorted(service_info.manufacturer_data.keys()),
         payload_len,
     )
 
@@ -221,7 +216,6 @@ def _process_advertisement(
         )
         return
 
-    security_key_hex = str(entry_data.get(CONF_SECURITY_KEY, ""))
     if len(manufacturer_data) == COMMISSIONING_TELEGRAM_LENGTH:
         _LOGGER.debug(
             "commissioning_detected entry_id=%s mac=%s payload_len=%s",
@@ -240,13 +234,13 @@ def _process_advertisement(
             )
             return
 
-        if not security_key_hex:
-            entry_data[CONF_SECURITY_KEY] = commissioning.security_key_hex
-            entry_data["last_sequence_counter"] = commissioning.sequence_counter
-            _schedule_sequence_save(entry_data)
-            new_data = dict(entry.data)
-            new_data[CONF_SECURITY_KEY] = commissioning.security_key_hex
-            hass.config_entries.async_update_entry(entry, data=new_data)
+        if not data.security_key:
+            data.security_key = commissioning.security_key_hex
+            data.last_sequence_counter = commissioning.sequence_counter
+            _schedule_sequence_save(data)
+            hass.config_entries.async_update_entry(
+                entry, data={**entry.data, CONF_SECURITY_KEY: commissioning.security_key_hex}
+            )
             _LOGGER.info("EnOcean BLE auto-commissioned device %s", configured_mac)
             _LOGGER.debug(
                 "commissioning_applied entry_id=%s mac=%s sequence_counter=%s key_fingerprint=%s",
@@ -262,11 +256,11 @@ def _process_advertisement(
             entry.entry_id,
             configured_mac,
             commissioning.sequence_counter,
-            _fingerprint_key(security_key_hex),
+            _fingerprint_key(data.security_key),
         )
         return
 
-    if not security_key_hex:
+    if not data.security_key:
         _LOGGER.debug(
             "telegram_ignored_no_key entry_id=%s mac=%s payload_len=%s",
             entry.entry_id,
@@ -280,13 +274,13 @@ def _process_advertisement(
         entry.entry_id,
         configured_mac,
         len(manufacturer_data),
-        _fingerprint_key(security_key_hex),
+        _fingerprint_key(data.security_key),
     )
     try:
         parsed = parse_data_telegram(
             manufacturer_data,
             mac_address=configured_mac,
-            security_key_hex=security_key_hex,
+            security_key_hex=data.security_key,
         )
     except ValueError as err:
         _LOGGER.debug(
@@ -315,24 +309,23 @@ def _process_advertisement(
         )
         return
 
-    last_sequence = int(entry_data["last_sequence_counter"])
-    if parsed.sequence_counter <= last_sequence:
+    if parsed.sequence_counter <= data.last_sequence_counter:
         _LOGGER.debug(
             "telegram_deduplicated entry_id=%s mac=%s sequence_counter=%s last_sequence=%s",
             entry.entry_id,
             configured_mac,
             parsed.sequence_counter,
-            last_sequence,
+            data.last_sequence_counter,
         )
         return
 
-    entry_data["last_sequence_counter"] = parsed.sequence_counter
-    _schedule_sequence_save(entry_data)
+    data.last_sequence_counter = parsed.sequence_counter
+    _schedule_sequence_save(data)
     for button in parsed.buttons:
         _emit_button_event(
             hass=hass,
             entry=entry,
-            entry_data=entry_data,
+            data=data,
             button=button,
             event_type=parsed.event_type,
             sequence_counter=parsed.sequence_counter,
@@ -343,9 +336,9 @@ def _process_advertisement(
 
 def _emit_button_event(
     *,
-    hass: Any,
-    entry: Any,
-    entry_data: dict[str, Any],
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    data: EnOceanBleData,
     button: str,
     event_type: str,
     sequence_counter: int,
@@ -358,10 +351,8 @@ def _emit_button_event(
     does not pair with a seen press (sequence counter = press + 1), i.e. the press
     telegram was lost.
     """
-    last_press_seq: dict[str, int] = entry_data["last_press_seq"]
-
     if event_type == TELEGRAM_PRESS:
-        last_press_seq[button] = sequence_counter
+        data.last_press_seq[button] = sequence_counter
         _LOGGER.debug(
             "event_press entry_id=%s mac=%s button=%s sequence_counter=%s",
             entry.entry_id,
@@ -369,7 +360,7 @@ def _emit_button_event(
             button,
             sequence_counter,
         )
-    elif last_press_seq.get(button) == sequence_counter - 1:
+    elif data.last_press_seq.get(button) == sequence_counter - 1:
         _LOGGER.debug(
             "event_release_paired entry_id=%s mac=%s button=%s sequence_counter=%s",
             entry.entry_id,
@@ -385,7 +376,7 @@ def _emit_button_event(
             mac_address,
             button,
             sequence_counter,
-            last_press_seq.get(button),
+            data.last_press_seq.get(button),
         )
 
     _fire_event(
@@ -400,16 +391,14 @@ def _emit_button_event(
 
 def _fire_event(
     *,
-    hass: Any,
-    entry: Any,
+    hass: HomeAssistant,
+    entry: ConfigEntry,
     button: str,
     sequence_counter: int,
     rssi: int | None,
     mac_address: str,
 ) -> None:
     """Send a press event to the entity of this button."""
-    from homeassistant.helpers.dispatcher import async_dispatcher_send
-
     signal = SIGNAL_BUTTON_EVENT.format(entry_id=entry.entry_id, button=button)
     event_data = {
         ATTR_RSSI: rssi,
@@ -428,20 +417,18 @@ def _fire_event(
     async_dispatcher_send(hass, signal, event_data)
 
 
-async def async_unload_entry(hass: Any, entry: Any) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: EnOceanBleConfigEntry) -> bool:
     """Unload a config entry."""
     unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unloaded:
-        entry_data = hass.data[DOMAIN].pop(entry.entry_id, None)
-        store = entry_data.get("store") if entry_data else None
-        if store is not None:
-            # Write now instead of after the save delay, so a reload loads the latest counter.
-            await store.async_save(_sequence_data(entry_data))
+        # Write now instead of after the save delay, so a reload loads the latest counter.
+        data = entry.runtime_data
+        await data.store.async_save(_sequence_data(data))
     _LOGGER.debug("unload_entry entry_id=%s unloaded=%s", entry.entry_id, unloaded)
-    return bool(unloaded)
+    return unloaded
 
 
-async def async_remove_entry(hass: Any, entry: Any) -> None:
+async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Remove persisted data of a deleted config entry."""
     await _sequence_store(hass, entry).async_remove()
 

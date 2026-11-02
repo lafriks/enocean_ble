@@ -184,8 +184,8 @@ class EnOceanBleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         )
 
 
-class EnOceanBleOptionsFlow(config_entries.OptionsFlow):
-    """Handle EnOcean BLE options."""
+class EnOceanBleOptionsFlow(config_entries.OptionsFlowWithReload):
+    """Handle EnOcean BLE options; the entry is reloaded when they change."""
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Show the options form."""

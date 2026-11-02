@@ -158,7 +158,7 @@ async def test_remove_cancels_pending_wait() -> None:
         "custom_components.enocean_ble.config_flow.async_process_advertisements",
         AsyncMock(side_effect=lambda *a, **k: never),
     ):
-        result = await flow.async_step_bluetooth(_service_info(bytes(9)))
+        await flow.async_step_bluetooth(_service_info(bytes(9)))
     task = _task(flow)
     flow.async_remove()
     await asyncio.sleep(0)

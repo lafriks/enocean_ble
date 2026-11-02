@@ -1,4 +1,4 @@
-"""Basic setup tests for integration bootstrap."""
+"""Tests for entry setup, replay protection, migration and unload."""
 
 from __future__ import annotations
 
@@ -7,33 +7,20 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from custom_components.enocean_ble import (
-    _async_update_listener,
     _fire_event,
     _process_advertisement,
     async_migrate_entry,
     async_remove_entry,
-    async_setup,
     async_setup_entry,
     async_unload_entry,
 )
 from custom_components.enocean_ble.const import (
     CONF_MAC_ADDRESS,
     CONF_SECURITY_KEY,
-    DOMAIN,
     ENOCEAN_MANUFACTURER_ID,
 )
 from custom_components.enocean_ble.crypto import calculate_mic
-
-
-async def test_async_setup_initializes_domain() -> None:
-    hass = SimpleNamespace(data={})
-    assert await async_setup(hass, {}) is True
-    assert DOMAIN in hass.data
-
-
-# ---------------------------------------------------------------------------
-# Sequence counter persistence and unload cleanup
-# ---------------------------------------------------------------------------
+from custom_components.enocean_ble.diagnostics import async_get_config_entry_diagnostics
 
 _KEY_HEX = "00112233445566778899aabbccddeeff"
 _MAC = "E2:15:AA:BB:CC:DD"
@@ -45,7 +32,7 @@ def _telegram(seq: int, status: int = 0x01 | 0x02) -> bytes:
     return seq.to_bytes(4, byteorder="little") + payload + mic
 
 
-def _service_info(seq: int, status: int = 0x01 | 0x02) -> SimpleNamespace:
+def _service_info(seq: int, status: int = 0x01 | 0x02) -> Any:
     return SimpleNamespace(
         address=_MAC,
         rssi=-60,
@@ -53,36 +40,40 @@ def _service_info(seq: int, status: int = 0x01 | 0x02) -> SimpleNamespace:
     )
 
 
-def _entry() -> SimpleNamespace:
+def _hass() -> Any:
+    return SimpleNamespace(config_entries=SimpleNamespace(async_update_entry=MagicMock()))
+
+
+def _entry(options: dict[str, Any] | None = None) -> Any:
     return SimpleNamespace(
         entry_id="entry1",
+        title="Switch",
+        unique_id=_MAC,
+        version=2,
         data={CONF_MAC_ADDRESS: _MAC, CONF_SECURITY_KEY: _KEY_HEX},
-        options={},
+        options=options or {},
         async_on_unload=MagicMock(),
-        add_update_listener=MagicMock(),
     )
 
 
-async def _setup(stored: dict[str, Any] | None) -> tuple[Any, Any, MagicMock]:
-    return await _setup_with(_entry(), stored)
-
-
-async def _setup_with(
-    entry: Any, stored: dict[str, Any] | None = None
+async def _setup(
+    stored: dict[str, Any] | None = None, options: dict[str, Any] | None = None
 ) -> tuple[Any, Any, MagicMock]:
+    """Set up an entry with a mocked store; returns (hass, entry, store)."""
     store = MagicMock()
     store.async_load = AsyncMock(return_value=stored)
     store.async_save = AsyncMock()
-    hass = SimpleNamespace(
-        data={},
+    hass: Any = SimpleNamespace(
         config_entries=SimpleNamespace(
             async_forward_entry_setups=AsyncMock(),
             async_unload_platforms=AsyncMock(return_value=True),
+            async_update_entry=MagicMock(),
         ),
     )
+    entry = _entry(options)
     with (
-        patch("homeassistant.helpers.storage.Store", return_value=store),
-        patch("homeassistant.components.bluetooth.async_register_callback") as register,
+        patch("custom_components.enocean_ble.Store", return_value=store),
+        patch("custom_components.enocean_ble.async_register_callback") as register,
     ):
         assert await async_setup_entry(hass, entry) is True
     hass.register_callback = register
@@ -91,8 +82,7 @@ async def _setup_with(
 
 async def test_setup_restores_sequence_counter_and_rejects_replay() -> None:
     hass, entry, store = await _setup({"last_sequence_counter": 41})
-    entry_data = hass.data[DOMAIN][entry.entry_id]
-    assert entry_data["last_sequence_counter"] == 41
+    assert entry.runtime_data.last_sequence_counter == 41
 
     with patch("custom_components.enocean_ble._emit_button_event") as emit:
         _process_advertisement(hass, entry, _service_info(41))  # replayed telegram
@@ -102,79 +92,26 @@ async def test_setup_restores_sequence_counter_and_rejects_replay() -> None:
         _process_advertisement(hass, entry, _service_info(42))
         emit.assert_called_once()
 
-    assert entry_data["last_sequence_counter"] == 42
-    store.async_delay_save.assert_called_once()
-    data_func = store.async_delay_save.call_args.args[0]
+    assert entry.runtime_data.last_sequence_counter == 42
+    data_func, delay = store.async_delay_save.call_args.args
     assert data_func() == {"last_sequence_counter": 42, "last_press_seq": {}}
+    assert delay == 5.0
 
 
 async def test_setup_without_stored_data_starts_fresh() -> None:
-    hass, entry, _store = await _setup(None)
-    assert hass.data[DOMAIN][entry.entry_id]["last_sequence_counter"] == -1
-
-
-async def test_unload_saves_counter_and_clears_data() -> None:
-    hass, entry, store = await _setup({"last_sequence_counter": 7})
-
-    assert await async_unload_entry(hass, entry) is True
-
-    store.async_save.assert_awaited_once_with({"last_sequence_counter": 7, "last_press_seq": {}})
-    assert entry.entry_id not in hass.data[DOMAIN]
-
-
-async def test_failed_unload_keeps_data() -> None:
-    hass, entry, store = await _setup(None)
-    hass.config_entries.async_unload_platforms.return_value = False
-
-    assert await async_unload_entry(hass, entry) is False
-
-    store.async_save.assert_not_awaited()
-    assert entry.entry_id in hass.data[DOMAIN]
-
-
-async def test_remove_entry_deletes_store() -> None:
-    store = MagicMock()
-    store.async_remove = AsyncMock()
-    with patch("homeassistant.helpers.storage.Store", return_value=store):
-        await async_remove_entry(SimpleNamespace(), _entry())
-    store.async_remove.assert_awaited_once()
+    _hass, entry, _store = await _setup(None)
+    assert entry.runtime_data.last_sequence_counter == -1
+    assert entry.runtime_data.last_press_seq == {}
 
 
 async def test_bluetooth_callback_is_filtered_by_address() -> None:
-    hass, _, _ = await _setup(None)
+    hass, _, _ = await _setup()
     matcher = hass.register_callback.call_args.args[2]
-    assert matcher == {
+    assert dict(matcher) == {
         "address": _MAC,
         "manufacturer_id": ENOCEAN_MANUFACTURER_ID,
         "connectable": False,
     }
-
-
-async def test_advertisement_after_unload_is_ignored() -> None:
-    hass, entry, _store = await _setup(None)
-    assert await async_unload_entry(hass, entry) is True
-
-    with patch("custom_components.enocean_ble._emit_button_event") as emit:
-        _process_advertisement(hass, entry, _service_info(1))
-    emit.assert_not_called()
-
-
-def test_fire_event_dispatches_per_button_signal() -> None:
-    hass = MagicMock()
-    entry = _entry()
-    with patch("homeassistant.helpers.dispatcher.async_dispatcher_send") as send:
-        _fire_event(
-            hass=hass,
-            entry=entry,
-            button="B1",
-            sequence_counter=5,
-            rssi=-60,
-            mac_address=_MAC,
-        )
-
-    send.assert_called_once()
-    assert send.call_args.args[1] == "enocean_ble_button_event_entry1_B1"
-    assert send.call_args.args[2] == {"rssi": -60, "sequence_counter": 5, "mac_address": _MAC}
 
 
 async def test_release_after_reload_pairs_with_restored_press() -> None:
@@ -186,20 +123,97 @@ async def test_release_after_reload_pairs_with_restored_press() -> None:
     fire.assert_not_called()
 
 
+async def test_strict_option_saves_without_delay() -> None:
+    hass, entry, store = await _setup(options={"strict_replay_protection": True})
+    assert entry.runtime_data.save_delay == 0.0
+    with patch("custom_components.enocean_ble._emit_button_event"):
+        _process_advertisement(hass, entry, _service_info(1))
+    assert store.async_delay_save.call_args.args[1] == 0.0
+
+
+async def test_auto_commissioning_stores_key() -> None:
+    hass, entry, store = await _setup()
+    entry.data = {CONF_MAC_ADDRESS: _MAC}
+    entry.runtime_data.security_key = ""
+    commissioning = bytes.fromhex("71010000AB4B9A91852B70B8A652A05E92BB12A09F1B000015E2")
+    info: Any = SimpleNamespace(
+        address=_MAC, rssi=-60, manufacturer_data={ENOCEAN_MANUFACTURER_ID: commissioning}
+    )
+
+    _process_advertisement(hass, entry, info)
+
+    assert entry.runtime_data.security_key == "ab4b9a91852b70b8a652a05e92bb12a0"
+    assert entry.runtime_data.last_sequence_counter == 0x171
+    hass.config_entries.async_update_entry.assert_called_once()
+    assert hass.config_entries.async_update_entry.call_args.kwargs["data"][CONF_SECURITY_KEY]
+    store.async_delay_save.assert_called_once()
+
+
+async def test_unload_saves_counter() -> None:
+    hass, entry, store = await _setup({"last_sequence_counter": 7})
+
+    assert await async_unload_entry(hass, entry) is True
+
+    store.async_save.assert_awaited_once_with({"last_sequence_counter": 7, "last_press_seq": {}})
+
+
+async def test_failed_unload_does_not_save() -> None:
+    hass, entry, store = await _setup()
+    hass.config_entries.async_unload_platforms.return_value = False
+
+    assert await async_unload_entry(hass, entry) is False
+
+    store.async_save.assert_not_awaited()
+
+
+async def test_advertisement_after_unload_is_ignored() -> None:
+    hass, entry, _store = await _setup()
+    assert await async_unload_entry(hass, entry) is True
+    del entry.runtime_data  # Home Assistant drops it after unload
+
+    with patch("custom_components.enocean_ble._emit_button_event") as emit:
+        _process_advertisement(hass, entry, _service_info(1))
+    emit.assert_not_called()
+
+
+async def test_remove_entry_deletes_store() -> None:
+    store = MagicMock()
+    store.async_remove = AsyncMock()
+    with patch("custom_components.enocean_ble.Store", return_value=store):
+        await async_remove_entry(_hass(), _entry())
+    store.async_remove.assert_awaited_once()
+
+
+def test_fire_event_dispatches_per_button_signal() -> None:
+    hass = MagicMock()
+    with patch("custom_components.enocean_ble.async_dispatcher_send") as send:
+        _fire_event(
+            hass=hass,
+            entry=_entry(),
+            button="B1",
+            sequence_counter=5,
+            rssi=-60,
+            mac_address=_MAC,
+        )
+
+    send.assert_called_once()
+    assert send.call_args.args[1] == "enocean_ble_button_event_entry1_B1"
+    assert send.call_args.args[2] == {"rssi": -60, "sequence_counter": 5, "mac_address": _MAC}
+
+
 async def test_migrate_entry_v1_removes_sensors_and_options() -> None:
     registry = MagicMock()
     entities = [
         SimpleNamespace(domain="sensor", entity_id="sensor.switch_a0_event"),
         SimpleNamespace(domain="event", entity_id="event.switch_a0"),
     ]
-    hass = SimpleNamespace(config_entries=SimpleNamespace(async_update_entry=MagicMock()))
-    entry = _entry()
+    hass = _hass()
+    entry = _entry({"event_mode": "simple"})
     entry.version = 1
-    entry.options = {"event_mode": "simple"}
     with (
-        patch("homeassistant.helpers.entity_registry.async_get", return_value=registry),
+        patch("custom_components.enocean_ble.er.async_get", return_value=registry),
         patch(
-            "homeassistant.helpers.entity_registry.async_entries_for_config_entry",
+            "custom_components.enocean_ble.er.async_entries_for_config_entry",
             return_value=entities,
         ),
     ):
@@ -212,27 +226,16 @@ async def test_migrate_entry_v1_removes_sensors_and_options() -> None:
 async def test_migrate_entry_rejects_newer_version() -> None:
     entry = _entry()
     entry.version = 3
-    assert await async_migrate_entry(SimpleNamespace(), entry) is False
+    assert await async_migrate_entry(_hass(), entry) is False
 
 
-async def test_strict_option_saves_without_delay() -> None:
-    hass, entry, store = await _setup(None)
-    assert hass.data[DOMAIN][entry.entry_id]["save_delay"] == 5.0
+async def test_diagnostics_redact_security_key() -> None:
+    hass, entry, _store = await _setup({"last_sequence_counter": 9, "last_press_seq": {"A1": 8}})
 
-    entry.options = {"strict_replay_protection": True}
-    hass, entry, store = await _setup_with(entry)
-    with patch("custom_components.enocean_ble._emit_button_event"):
-        _process_advertisement(hass, entry, _service_info(1))
-    assert store.async_delay_save.call_args.args[1] == 0.0
+    diagnostics = await async_get_config_entry_diagnostics(hass, entry)
 
-
-async def test_update_listener_reloads_only_when_option_changes() -> None:
-    hass, entry, _store = await _setup(None)
-    hass.config_entries.async_reload = AsyncMock()
-
-    await _async_update_listener(hass, entry)  # e.g. auto-commissioning wrote the key
-    hass.config_entries.async_reload.assert_not_awaited()
-
-    entry.options = {"strict_replay_protection": True}
-    await _async_update_listener(hass, entry)
-    hass.config_entries.async_reload.assert_awaited_once_with(entry.entry_id)
+    assert diagnostics["entry"]["data"][CONF_SECURITY_KEY] == "**REDACTED**"
+    assert diagnostics["entry"]["data"][CONF_MAC_ADDRESS] == _MAC
+    assert diagnostics["runtime"]["last_sequence_counter"] == 9
+    assert diagnostics["runtime"]["last_press_seq"] == {"A1": 8}
+    assert _KEY_HEX not in str(diagnostics)

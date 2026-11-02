@@ -2,13 +2,15 @@
 
 from __future__ import annotations
 
+from homeassistant.const import Platform
+
 DOMAIN = "enocean_ble"
 INTEGRATION_NAME = "PTM 215B/PTM 216B"
-PLATFORMS = ["event"]
+PLATFORMS = [Platform.EVENT]
 
 # Config entry version 1 (up to 2026.5) had per-button event sensors and an event_mode option.
 CONFIG_ENTRY_VERSION = 2
-LEGACY_PLATFORMS = ["sensor"]
+LEGACY_PLATFORMS = [Platform.SENSOR]
 
 CONF_MAC_ADDRESS = "mac_address"
 CONF_SECURITY_KEY = "security_key"

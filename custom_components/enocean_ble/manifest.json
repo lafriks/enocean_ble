@@ -21,9 +21,5 @@
   "documentation": "https://github.com/lafriks/enocean_ble",
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/lafriks/enocean_ble/issues",
-  "loggers": [
-    "custom_components.enocean_ble"
-  ],
-  "requirements": [],
   "version": "2026.11.1"
 }
