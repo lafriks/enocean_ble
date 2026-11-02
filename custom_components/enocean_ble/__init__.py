@@ -4,43 +4,32 @@ from __future__ import annotations
 
 import hashlib
 import logging
-from collections.abc import Callable
-from time import monotonic
 from typing import Any
 
-from homeassistant.core import callback
-
 from .const import (
-    ATTR_BUTTON,
-    ATTR_EVENT_TYPE,
     ATTR_MAC_ADDRESS,
     ATTR_RSSI,
     ATTR_SEQUENCE_COUNTER,
-    CONF_EVENT_MODE,
     CONF_MAC_ADDRESS,
     CONF_SECURITY_KEY,
+    CONF_STRICT_REPLAY_PROTECTION,
+    CONFIG_ENTRY_VERSION,
     DATA_TELEGRAM_MIN_LENGTH,
-    DEFAULT_EVENT_MODE,
+    DEFAULT_STRICT_REPLAY_PROTECTION,
     DOMAIN,
     ENOCEAN_MAC_PREFIX,
     ENOCEAN_MANUFACTURER_ID,
-    EVENT_BUTTON_ACTION,
-    EVENT_BUTTON_EVENT,
-    EVENT_MODE_SIMPLE,
-    LONG_PRESS_SECONDS,
+    LEGACY_PLATFORMS,
     PLATFORMS,
-    RELEASE_TIMEOUT_SECONDS,
     SIGNAL_BUTTON_EVENT,
-    SIMPLE_EVENT_TYPE,
-    SIMPLE_MODE_PLATFORMS,
     STORAGE_SAVE_DELAY_SECONDS,
+    STORAGE_SAVE_DELAY_STRICT_SECONDS,
     STORAGE_VERSION,
+    TELEGRAM_PRESS,
 )
 from .parser import parse_commissioning_telegram, parse_data_telegram
 
 _LOGGER = logging.getLogger(__name__)
-
-ButtonState = dict[str, float | int | bool | Callable[[], None] | None]
 
 
 async def async_setup(hass: Any, config: dict[str, Any]) -> bool:
@@ -62,34 +51,31 @@ async def async_setup_entry(hass: Any, entry: Any) -> bool:
 
     mac_address = entry.data[CONF_MAC_ADDRESS]
     security_key = entry.data.get(CONF_SECURITY_KEY, "")
-    event_mode = get_event_mode(entry)
-    platforms = SIMPLE_MODE_PLATFORMS if event_mode == EVENT_MODE_SIMPLE else PLATFORMS
 
     store = _sequence_store(hass, entry)
-    stored = await store.async_load()
-    last_sequence_counter = int(stored.get("last_sequence_counter", -1)) if stored else -1
+    stored = await store.async_load() or {}
+    last_sequence_counter = int(stored.get("last_sequence_counter", -1))
 
+    save_delay = _save_delay(entry)
     hass.data[DOMAIN][entry.entry_id] = {
         CONF_MAC_ADDRESS: mac_address,
         CONF_SECURITY_KEY: security_key,
-        CONF_EVENT_MODE: event_mode,
-        "platforms": platforms,
         "store": store,
+        "save_delay": save_delay,
         "last_sequence_counter": last_sequence_counter,
-        "buttons": {},
+        # Per button: sequence counter of the last press telegram seen. Restored too, so a
+        # release arriving right after a reload still pairs with its press.
+        "last_press_seq": {k: int(v) for k, v in stored.get("last_press_seq", {}).items()},
     }
     _LOGGER.debug(
-        "setup_entry entry_id=%s mac=%s event_mode=%s last_sequence_counter=%s security_key_present=%s security_key_fingerprint=%s",
+        "setup_entry entry_id=%s mac=%s last_sequence_counter=%s save_delay=%s security_key_present=%s security_key_fingerprint=%s",
         entry.entry_id,
         mac_address,
-        event_mode,
         last_sequence_counter,
+        save_delay,
         bool(security_key),
         _fingerprint_key(security_key),
     )
-
-    if event_mode == EVENT_MODE_SIMPLE:
-        _async_remove_unused_entities(hass, entry, platforms)
 
     def _async_handle_advertisement(
         service_info: BluetoothServiceInfoBleak, _change: BluetoothChange
@@ -110,10 +96,25 @@ async def async_setup_entry(hass: Any, entry: Any) -> bool:
         )
     )
     entry.async_on_unload(entry.add_update_listener(_async_update_listener))
-    await hass.config_entries.async_forward_entry_setups(entry, platforms)
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     _LOGGER.info("EnOcean BLE device configured: %s", mac_address)
     return True
+
+
+def _save_delay(entry: Any) -> float:
+    """Return how long to wait before writing the replay counter to disk."""
+    strict = entry.options.get(CONF_STRICT_REPLAY_PROTECTION, DEFAULT_STRICT_REPLAY_PROTECTION)
+    return STORAGE_SAVE_DELAY_STRICT_SECONDS if strict else STORAGE_SAVE_DELAY_SECONDS
+
+
+async def _async_update_listener(hass: Any, entry: Any) -> None:
+    """Reload the entry when an option changes."""
+    entry_data = hass.data[DOMAIN].get(entry.entry_id)
+    # Data updates (auto-commissioning writing the key) also land here; only reload on option change.
+    if entry_data is None or entry_data["save_delay"] == _save_delay(entry):
+        return
+    await hass.config_entries.async_reload(entry.entry_id)
 
 
 def _sequence_store(hass: Any, entry: Any) -> Any:
@@ -123,43 +124,42 @@ def _sequence_store(hass: Any, entry: Any) -> Any:
     return Store(hass, STORAGE_VERSION, f"{DOMAIN}.{entry.entry_id}")
 
 
-def _sequence_data(entry_data: dict[str, Any]) -> dict[str, int]:
-    return {"last_sequence_counter": int(entry_data["last_sequence_counter"])}
+def _sequence_data(entry_data: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "last_sequence_counter": int(entry_data["last_sequence_counter"]),
+        "last_press_seq": dict(entry_data["last_press_seq"]),
+    }
 
 
 def _schedule_sequence_save(entry_data: dict[str, Any]) -> None:
     store = entry_data.get("store")
     if store is not None:
-        store.async_delay_save(lambda: _sequence_data(entry_data), STORAGE_SAVE_DELAY_SECONDS)
+        store.async_delay_save(lambda: _sequence_data(entry_data), entry_data["save_delay"])
 
 
-def get_event_mode(entry: Any) -> str:
-    """Return the configured event mode for a config entry."""
-    return str(entry.options.get(CONF_EVENT_MODE, DEFAULT_EVENT_MODE))
-
-
-async def _async_update_listener(hass: Any, entry: Any) -> None:
-    """Reload the entry when the event mode option changes."""
-    entry_data = hass.data[DOMAIN].get(entry.entry_id)
-    # Entry data updates (e.g. auto-commissioning) also land here; only reload on mode change.
-    if entry_data is None or entry_data[CONF_EVENT_MODE] == get_event_mode(entry):
-        return
-    await hass.config_entries.async_reload(entry.entry_id)
-
-
-def _async_remove_unused_entities(hass: Any, entry: Any, platforms: list[str]) -> None:
-    """Remove entities of platforms not loaded in the current event mode."""
+async def async_migrate_entry(hass: Any, entry: Any) -> bool:
+    """Migrate config entries created by older versions."""
     from homeassistant.helpers import entity_registry as er
 
-    registry = er.async_get(hass)
-    for entity in er.async_entries_for_config_entry(registry, entry.entry_id):
-        if entity.domain not in platforms:
-            _LOGGER.debug(
-                "entity_removed entry_id=%s entity_id=%s reason=unused_in_event_mode",
-                entry.entry_id,
-                entity.entity_id,
-            )
-            registry.async_remove(entity.entity_id)
+    if entry.version > CONFIG_ENTRY_VERSION:
+        # Created by a newer version; downgrades are not supported.
+        return False
+
+    if entry.version == 1:
+        # Version 1 had per-button event sensors and an event_mode option; neither exists any more.
+        registry = er.async_get(hass)
+        for entity in er.async_entries_for_config_entry(registry, entry.entry_id):
+            if entity.domain in LEGACY_PLATFORMS:
+                _LOGGER.debug(
+                    "entity_removed entry_id=%s entity_id=%s reason=legacy_platform",
+                    entry.entry_id,
+                    entity.entity_id,
+                )
+                registry.async_remove(entity.entity_id)
+        hass.config_entries.async_update_entry(entry, options={}, version=CONFIG_ENTRY_VERSION)
+        _LOGGER.info("EnOcean BLE config entry %s migrated to version 2", entry.entry_id)
+
+    return True
 
 
 def _process_advertisement(
@@ -325,13 +325,10 @@ def _process_advertisement(
         )
         return
 
-    emit = (
-        _emit_simple_button_event
-        if entry_data.get(CONF_EVENT_MODE) == EVENT_MODE_SIMPLE
-        else _emit_button_event
-    )
+    entry_data["last_sequence_counter"] = parsed.sequence_counter
+    _schedule_sequence_save(entry_data)
     for button in parsed.buttons:
-        emit(
+        _emit_button_event(
             hass=hass,
             entry=entry,
             entry_data=entry_data,
@@ -341,12 +338,9 @@ def _process_advertisement(
             rssi=service_info.rssi,
             mac_address=configured_mac,
         )
-    # Updated after emitting so handlers can see the previous device-wide sequence counter.
-    entry_data["last_sequence_counter"] = parsed.sequence_counter
-    _schedule_sequence_save(entry_data)
 
 
-def _emit_simple_button_event(
+def _emit_button_event(
     *,
     hass: Any,
     entry: Any,
@@ -363,16 +357,20 @@ def _emit_simple_button_event(
     does not pair with a seen press (sequence counter = press + 1), i.e. the press
     telegram was lost.
     """
-    buttons = entry_data["buttons"]
-    if not isinstance(buttons, dict):
-        return
-    state = buttons.setdefault(button, {"last_press_seq": None})
+    last_press_seq: dict[str, int] = entry_data["last_press_seq"]
 
-    if event_type == "press":
-        state["last_press_seq"] = sequence_counter
-    elif state.get("last_press_seq") == sequence_counter - 1:
+    if event_type == TELEGRAM_PRESS:
+        last_press_seq[button] = sequence_counter
         _LOGGER.debug(
-            "event_simple_release_paired entry_id=%s mac=%s button=%s sequence_counter=%s",
+            "event_press entry_id=%s mac=%s button=%s sequence_counter=%s",
+            entry.entry_id,
+            mac_address,
+            button,
+            sequence_counter,
+        )
+    elif last_press_seq.get(button) == sequence_counter - 1:
+        _LOGGER.debug(
+            "event_release_paired entry_id=%s mac=%s button=%s sequence_counter=%s",
             entry.entry_id,
             mac_address,
             button,
@@ -381,222 +379,22 @@ def _emit_simple_button_event(
         return
     else:
         _LOGGER.debug(
-            "event_simple_press_recovered entry_id=%s mac=%s button=%s sequence_counter=%s last_press_seq=%s",
+            "event_press_recovered entry_id=%s mac=%s button=%s sequence_counter=%s last_press_seq=%s",
             entry.entry_id,
             mac_address,
             button,
             sequence_counter,
-            state.get("last_press_seq"),
+            last_press_seq.get(button),
         )
 
     _fire_event(
         hass=hass,
         entry=entry,
         button=button,
-        event_type=SIMPLE_EVENT_TYPE,
         sequence_counter=sequence_counter,
         rssi=rssi,
         mac_address=mac_address,
     )
-
-
-def _emit_button_event(
-    *,
-    hass: Any,
-    entry: Any,
-    entry_data: dict[str, Any],
-    button: str,
-    event_type: str,
-    sequence_counter: int,
-    rssi: int | None,
-    mac_address: str,
-) -> None:
-    from homeassistant.helpers.event import async_call_later
-
-    buttons = entry_data["buttons"]
-    if not isinstance(buttons, dict):
-        return
-
-    state_any = buttons.setdefault(
-        button,
-        {
-            "pressed_at": None,
-            "long_fired": False,
-            "last_single_press_seq": None,
-            "cancel_long_cb": None,
-            "cancel_timeout_cb": None,
-        },
-    )
-    if not isinstance(state_any, dict):
-        return
-    state: ButtonState = state_any
-
-    if event_type == "press":
-        _cancel_all_timers(state)
-        state["pressed_at"] = monotonic()
-        state["long_fired"] = False
-        _LOGGER.debug(
-            "event_press entry_id=%s mac=%s button=%s sequence_counter=%s",
-            entry.entry_id,
-            mac_address,
-            button,
-            sequence_counter,
-        )
-        _fire_event(
-            hass=hass,
-            entry=entry,
-            button=button,
-            event_type="press",
-            sequence_counter=sequence_counter,
-            rssi=rssi,
-            mac_address=mac_address,
-        )
-        if sequence_counter != state.get("last_single_press_seq"):
-            state["last_single_press_seq"] = sequence_counter
-            _fire_event(
-                hass=hass,
-                entry=entry,
-                button=button,
-                event_type="single_press",
-                sequence_counter=sequence_counter,
-                rssi=rssi,
-                mac_address=mac_address,
-            )
-
-        def _long_press_timer(_now: object) -> None:
-            if state.get("pressed_at") is None:
-                return
-            state["long_fired"] = True
-            state["cancel_long_cb"] = None
-            _LOGGER.debug(
-                "event_long_press entry_id=%s mac=%s button=%s",
-                entry.entry_id,
-                mac_address,
-                button,
-            )
-            _fire_event(
-                hass=hass,
-                entry=entry,
-                button=button,
-                event_type="long_press",
-                sequence_counter=sequence_counter,
-                rssi=rssi,
-                mac_address=mac_address,
-            )
-
-        def _release_timeout_timer(_now: object) -> None:
-            if state.get("pressed_at") is None:
-                return
-            state["pressed_at"] = None
-            state["long_fired"] = False
-            state["cancel_timeout_cb"] = None
-            _LOGGER.debug(
-                "event_release_timeout entry_id=%s mac=%s button=%s",
-                entry.entry_id,
-                mac_address,
-                button,
-            )
-            _fire_event(
-                hass=hass,
-                entry=entry,
-                button=button,
-                event_type="release_timeout",
-                sequence_counter=sequence_counter,
-                rssi=rssi,
-                mac_address=mac_address,
-            )
-
-        state["cancel_long_cb"] = async_call_later(hass, LONG_PRESS_SECONDS, _long_press_timer)
-        state["cancel_timeout_cb"] = async_call_later(
-            hass, RELEASE_TIMEOUT_SECONDS, _release_timeout_timer
-        )
-        return
-
-    if event_type == "release":
-        if state.get("pressed_at") is not None:
-            _cancel_all_timers(state)
-            long_fired = bool(state.get("long_fired"))
-            state["pressed_at"] = None
-            state["long_fired"] = False
-            _LOGGER.debug(
-                "event_release entry_id=%s mac=%s button=%s sequence_counter=%s long_fired=%s",
-                entry.entry_id,
-                mac_address,
-                button,
-                sequence_counter,
-                long_fired,
-            )
-            _fire_event(
-                hass=hass,
-                entry=entry,
-                button=button,
-                event_type="release",
-                sequence_counter=sequence_counter,
-                rssi=rssi,
-                mac_address=mac_address,
-            )
-            if long_fired:
-                _fire_event(
-                    hass=hass,
-                    entry=entry,
-                    button=button,
-                    event_type="long_release",
-                    sequence_counter=sequence_counter,
-                    rssi=rssi,
-                    mac_address=mac_address,
-                )
-        else:
-            # The sequence counter is shared by all buttons of the device, so coherence
-            # must be checked against the last telegram of any button.
-            old_seq = int(entry_data.get("last_sequence_counter", -1))
-            _LOGGER.debug(
-                "event_orphan_release entry_id=%s mac=%s button=%s sequence_counter=%s old_seq=%s",
-                entry.entry_id,
-                mac_address,
-                button,
-                sequence_counter,
-                old_seq,
-            )
-            _fire_event(
-                hass=hass,
-                entry=entry,
-                button=button,
-                event_type="orphan_release",
-                sequence_counter=sequence_counter,
-                rssi=rssi,
-                mac_address=mac_address,
-            )
-            is_coherent = old_seq >= 0 and sequence_counter - old_seq == 2
-            if is_coherent and sequence_counter != state.get("last_single_press_seq"):
-                state["last_single_press_seq"] = sequence_counter
-                _fire_event(
-                    hass=hass,
-                    entry=entry,
-                    button=button,
-                    event_type="single_press",
-                    sequence_counter=sequence_counter,
-                    rssi=rssi,
-                    mac_address=mac_address,
-                )
-        return
-
-    _fire_event(
-        hass=hass,
-        entry=entry,
-        button=button,
-        event_type=event_type,
-        sequence_counter=sequence_counter,
-        rssi=rssi,
-        mac_address=mac_address,
-    )
-
-
-def _cancel_all_timers(state: ButtonState) -> None:
-    for key in ("cancel_long_cb", "cancel_timeout_cb"):
-        cancel = state.get(key)
-        if callable(cancel):
-            cancel()
-        state[key] = None
 
 
 def _fire_event(
@@ -604,69 +402,40 @@ def _fire_event(
     hass: Any,
     entry: Any,
     button: str,
-    event_type: str,
     sequence_counter: int,
     rssi: int | None,
     mac_address: str,
 ) -> None:
+    """Send a press event to the entity of this button."""
     from homeassistant.helpers.dispatcher import async_dispatcher_send
 
-    fire_bus_events = get_event_mode(entry) != EVENT_MODE_SIMPLE
-
-    @callback
-    def _async_dispatch() -> None:
-        async_dispatcher_send(
-            hass, SIGNAL_BUTTON_EVENT.format(entry_id=entry.entry_id, button=button), payload
-        )
-        if not fire_bus_events:
-            return
-        hass.bus.async_fire(
-            EVENT_BUTTON_EVENT,
-            payload,
-        )
-        hass.bus.async_fire(
-            EVENT_BUTTON_ACTION,
-            payload,
-        )
-
-    payload = {
-        ATTR_BUTTON: button,
-        "event": event_type,
-        ATTR_EVENT_TYPE: event_type,
+    signal = SIGNAL_BUTTON_EVENT.format(entry_id=entry.entry_id, button=button)
+    event_data = {
         ATTR_RSSI: rssi,
         ATTR_SEQUENCE_COUNTER: sequence_counter,
         ATTR_MAC_ADDRESS: mac_address,
     }
     _LOGGER.debug(
-        "event_emit entry_id=%s mac=%s button=%s event_type=%s sequence_counter=%s rssi=%s signal=%s",
+        "event_emit entry_id=%s mac=%s button=%s sequence_counter=%s rssi=%s signal=%s",
         entry.entry_id,
         mac_address,
         button,
-        event_type,
         sequence_counter,
         rssi,
-        SIGNAL_BUTTON_EVENT.format(entry_id=entry.entry_id, button=button),
+        signal,
     )
-    hass.add_job(_async_dispatch)
+    async_dispatcher_send(hass, signal, event_data)
 
 
 async def async_unload_entry(hass: Any, entry: Any) -> bool:
     """Unload a config entry."""
-    # Use the platforms loaded at setup; options may already hold a new event mode.
-    entry_data = hass.data[DOMAIN].get(entry.entry_id, {})
-    unloaded = await hass.config_entries.async_unload_platforms(
-        entry, entry_data.get("platforms", PLATFORMS)
-    )
+    unloaded = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unloaded:
-        # Pending long-press/release-timeout timers would otherwise fire into the reloaded entry.
-        for state in entry_data.get("buttons", {}).values():
-            if isinstance(state, dict):
-                _cancel_all_timers(state)
-        store = entry_data.get("store")
+        entry_data = hass.data[DOMAIN].pop(entry.entry_id, None)
+        store = entry_data.get("store") if entry_data else None
         if store is not None:
             # Write now instead of after the save delay, so a reload loads the latest counter.
             await store.async_save(_sequence_data(entry_data))
-        hass.data[DOMAIN].pop(entry.entry_id, None)
     _LOGGER.debug("unload_entry entry_id=%s unloaded=%s", entry.entry_id, unloaded)
     return bool(unloaded)
 

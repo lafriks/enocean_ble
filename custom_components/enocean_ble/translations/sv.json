@@ -25,22 +25,13 @@
   "options": {
     "step": {
       "init": {
-        "title": "Läge för knapphändelser",
-        "description": "Välj hur knapptryckningar exponeras i Home Assistant. Byte av läge laddar om enheten.",
+        "title": "Alternativ för EnOcean BLE",
         "data": {
-          "event_mode": "Händelseläge"
+          "strict_replay_protection": "Strikt skydd mot uppspelning"
         },
         "data_description": {
-          "event_mode": "Enkelt: varje knappentitet (A0, A1, B0, B1) utlöser endast en `press`-händelse per klick; händelsesensorer och enocean_ble_button_event-busshändelser tas bort. Avancerat: alla händelsetyper (tryck, släpp, långt tryck, …), händelsesensorer och busshändelser."
+          "strict_replay_protection": "Skriv telegramräknaren till disk efter varje knapptryckning i stället för några sekunder senare. Förhindrar en engångsuppspelning av inspelad radiotrafik efter en krasch eller ett strömavbrott, till priset av en liten diskskrivning per klick. Behövs bara om strömbrytaren styr lås, dörrar eller liknande."
         }
-      }
-    }
-  },
-  "selector": {
-    "event_mode": {
-      "options": {
-        "advanced": "Avancerat (alla händelsetyper, sensorer och busshändelser)",
-        "simple": "Enkelt (en tryckhändelse per klick)"
       }
     }
   }

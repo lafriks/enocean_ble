@@ -25,22 +25,13 @@
   "options": {
     "step": {
       "init": {
-        "title": "Modo de eventos dos botões",
-        "description": "Escolha como os pressionamentos dos botões são expostos no Home Assistant. Alterar o modo recarrega o dispositivo.",
+        "title": "Opções do EnOcean BLE",
         "data": {
-          "event_mode": "Modo de eventos"
+          "strict_replay_protection": "Proteção estrita contra repetição"
         },
         "data_description": {
-          "event_mode": "Simples: cada entidade de botão (A0, A1, B0, B1) dispara apenas um evento `press` por clique; os sensores de eventos e os eventos de barramento enocean_ble_button_event são removidos. Avançado: todos os tipos de eventos (pressionar, soltar, pressionamento longo, …), sensores de eventos e eventos de barramento."
+          "strict_replay_protection": "Gravar o contador de telegramas no disco após cada pressionamento em vez de alguns segundos depois. Evita uma repetição única do tráfego de rádio gravado após uma falha ou queda de energia, ao custo de uma pequena gravação em disco por clique. Necessário apenas se o interruptor controla fechaduras, portas ou similares."
         }
-      }
-    }
-  },
-  "selector": {
-    "event_mode": {
-      "options": {
-        "advanced": "Avançado (todos os tipos de eventos, sensores e eventos de barramento)",
-        "simple": "Simples (um evento de pressionamento por clique)"
       }
     }
   }

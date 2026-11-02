@@ -25,22 +25,13 @@
   "options": {
     "step": {
       "init": {
-        "title": "Mode d'événements des boutons",
-        "description": "Choisissez comment les appuis sur les boutons sont exposés dans Home Assistant. Changer de mode recharge l'appareil.",
+        "title": "Options EnOcean BLE",
         "data": {
-          "event_mode": "Mode d'événements"
+          "strict_replay_protection": "Protection anti-rejeu stricte"
         },
         "data_description": {
-          "event_mode": "Simple : chaque entité bouton (A0, A1, B0, B1) émet un seul événement `press` par appui ; les capteurs d'événements et les événements de bus enocean_ble_button_event sont supprimés. Avancé : tous les types d'événements (appui, relâchement, appui long, …), capteurs d'événements et événements de bus."
+          "strict_replay_protection": "Écrire le compteur de télégrammes sur le disque après chaque appui au lieu de quelques secondes plus tard. Empêche une relecture unique du trafic radio enregistré après un plantage ou une coupure de courant, au prix d'une petite écriture disque par appui. Utile uniquement si l'interrupteur commande des serrures, des portes ou similaires."
         }
-      }
-    }
-  },
-  "selector": {
-    "event_mode": {
-      "options": {
-        "advanced": "Avancé (tous les types d'événements, capteurs et événements de bus)",
-        "simple": "Simple (un événement d'appui par clic)"
       }
     }
   }

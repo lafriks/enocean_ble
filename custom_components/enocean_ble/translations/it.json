@@ -25,22 +25,13 @@
   "options": {
     "step": {
       "init": {
-        "title": "Modalità eventi pulsanti",
-        "description": "Scegli come vengono esposte le pressioni dei pulsanti in Home Assistant. La modifica della modalità ricarica il dispositivo.",
+        "title": "Opzioni EnOcean BLE",
         "data": {
-          "event_mode": "Modalità eventi"
+          "strict_replay_protection": "Protezione anti-replay rigorosa"
         },
         "data_description": {
-          "event_mode": "Semplice: ogni entità pulsante (A0, A1, B0, B1) genera un solo evento `press` per pressione; i sensori di evento e gli eventi bus enocean_ble_button_event vengono rimossi. Avanzata: tutti i tipi di evento (pressione, rilascio, pressione lunga, …), sensori di evento ed eventi bus."
+          "strict_replay_protection": "Scrive il contatore dei telegrammi su disco dopo ogni pressione invece che alcuni secondi dopo. Impedisce una singola ritrasmissione del traffico radio registrato dopo un crash o un'interruzione di corrente, al costo di una piccola scrittura su disco per ogni pressione. Necessario solo se l'interruttore comanda serrature, porte o simili."
         }
-      }
-    }
-  },
-  "selector": {
-    "event_mode": {
-      "options": {
-        "advanced": "Avanzata (tutti i tipi di evento, sensori ed eventi bus)",
-        "simple": "Semplice (un evento di pressione per clic)"
       }
     }
   }

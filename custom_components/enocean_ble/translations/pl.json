@@ -25,22 +25,13 @@
   "options": {
     "step": {
       "init": {
-        "title": "Tryb zdarzeń przycisków",
-        "description": "Wybierz, jak naciśnięcia przycisków są udostępniane w Home Assistant. Zmiana trybu powoduje ponowne załadowanie urządzenia.",
+        "title": "Opcje EnOcean BLE",
         "data": {
-          "event_mode": "Tryb zdarzeń"
+          "strict_replay_protection": "Ścisła ochrona przed powtórzeniem"
         },
         "data_description": {
-          "event_mode": "Prosty: każda encja przycisku (A0, A1, B0, B1) wywołuje tylko jedno zdarzenie `press` na kliknięcie; sensory zdarzeń i zdarzenia magistrali enocean_ble_button_event są usuwane. Zaawansowany: wszystkie typy zdarzeń (naciśnięcie, zwolnienie, długie naciśnięcie, …), sensory zdarzeń i zdarzenia magistrali."
+          "strict_replay_protection": "Zapisuj licznik telegramów na dysku po każdym naciśnięciu przycisku zamiast kilka sekund później. Zapobiega jednorazowemu odtworzeniu nagranego ruchu radiowego po awarii lub utracie zasilania, kosztem niewielkiego zapisu na dysku przy każdym kliknięciu. Potrzebne tylko wtedy, gdy przełącznik steruje zamkami, drzwiami itp."
         }
-      }
-    }
-  },
-  "selector": {
-    "event_mode": {
-      "options": {
-        "advanced": "Zaawansowany (wszystkie typy zdarzeń, sensory i zdarzenia magistrali)",
-        "simple": "Prosty (jedno zdarzenie naciśnięcia na kliknięcie)"
       }
     }
   }

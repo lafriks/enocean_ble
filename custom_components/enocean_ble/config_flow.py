@@ -15,21 +15,17 @@ from homeassistant.components.bluetooth import (
 )
 from homeassistant.config_entries import ConfigFlowResult
 from homeassistant.core import callback
-from homeassistant.helpers.selector import (
-    SelectSelector,
-    SelectSelectorConfig,
-    SelectSelectorMode,
-)
+from homeassistant.helpers.selector import BooleanSelector
 
 from .const import (
-    CONF_EVENT_MODE,
     CONF_MAC_ADDRESS,
     CONF_SECURITY_KEY,
-    DEFAULT_EVENT_MODE,
+    CONF_STRICT_REPLAY_PROTECTION,
+    CONFIG_ENTRY_VERSION,
+    DEFAULT_STRICT_REPLAY_PROTECTION,
     DOMAIN,
     ENOCEAN_MAC_PREFIX,
     ENOCEAN_MANUFACTURER_ID,
-    EVENT_MODES,
     STATUS_BIT_ENERGY_BOW,
 )
 from .parser import parse_commissioning_telegram
@@ -45,7 +41,7 @@ COMMISSIONING_TIMEOUT = 120.0
 class EnOceanBleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for EnOcean BLE."""
 
-    VERSION = 1
+    VERSION = CONFIG_ENTRY_VERSION
 
     @staticmethod
     @callback
@@ -799,24 +795,18 @@ class EnOceanBleOptionsFlow(config_entries.OptionsFlow):
     """Handle EnOcean BLE options."""
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
-        """Select how button events are exposed."""
+        """Show the options form."""
         if user_input is not None:
             return self.async_create_entry(data=user_input)
 
-        current_mode = self.config_entry.options.get(CONF_EVENT_MODE, DEFAULT_EVENT_MODE)
+        current = self.config_entry.options.get(
+            CONF_STRICT_REPLAY_PROTECTION, DEFAULT_STRICT_REPLAY_PROTECTION
+        )
         return self.async_show_form(
             step_id="init",
             # Home Assistant aliases voluptuous to probatio at runtime; mypy sees the real voluptuous.
             data_schema=vol.Schema(  # type: ignore[arg-type]
-                {
-                    vol.Required(CONF_EVENT_MODE, default=current_mode): SelectSelector(
-                        SelectSelectorConfig(
-                            options=EVENT_MODES,
-                            mode=SelectSelectorMode.LIST,
-                            translation_key=CONF_EVENT_MODE,
-                        )
-                    ),
-                }
+                {vol.Required(CONF_STRICT_REPLAY_PROTECTION, default=current): BooleanSelector()}
             ),
         )
 

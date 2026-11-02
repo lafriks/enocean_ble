@@ -25,22 +25,13 @@
   "options": {
     "step": {
       "init": {
-        "title": "Button event mode",
-        "description": "Choose how button presses are exposed in Home Assistant. Changing the mode reloads the device.",
+        "title": "EnOcean BLE options",
         "data": {
-          "event_mode": "Event mode"
+          "strict_replay_protection": "Strict replay protection"
         },
         "data_description": {
-          "event_mode": "Simple: each button entity (A0, A1, B0, B1) fires only one `press` event per click; event sensors and enocean_ble_button_event bus events are removed. Advanced: all event types (press, release, long press, …), event sensors and bus events."
+          "strict_replay_protection": "Write the telegram counter to disk after every button press instead of a few seconds later. Prevents a one-time replay of recorded radio traffic after a crash or power loss, at the cost of a small disk write per click. Only needed if the switch controls locks, doors or similar."
         }
-      }
-    }
-  },
-  "selector": {
-    "event_mode": {
-      "options": {
-        "advanced": "Advanced (all event types, sensors and bus events)",
-        "simple": "Simple (one press event per click)"
       }
     }
   }

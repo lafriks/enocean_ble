@@ -25,22 +25,13 @@
   "options": {
     "step": {
       "init": {
-        "title": "Pogu notikumu režīms",
-        "description": "Izvēlieties, kā pogu nospiedieni tiek padarīti pieejami Home Assistant. Mainot režīmu, ierīce tiek pārlādēta.",
+        "title": "EnOcean BLE opcijas",
         "data": {
-          "event_mode": "Notikumu režīms"
+          "strict_replay_protection": "Stingra aizsardzība pret atkārtošanu"
         },
         "data_description": {
-          "event_mode": "Vienkāršais: katra pogas entītija (A0, A1, B0, B1) izraisa tikai vienu `press` notikumu par katru klikšķi; notikumu sensori un enocean_ble_button_event kopnes notikumi tiek noņemti. Paplašinātais: visi notikumu veidi (nospiešana, atlaišana, ilga nospiešana, …), notikumu sensori un kopnes notikumi."
+          "strict_replay_protection": "Ierakstīt telegrammu skaitītāju diskā pēc katra pogas nospiediena, nevis dažas sekundes vēlāk. Novērš ierakstītas radio datplūsmas vienreizēju atkārtošanu pēc avārijas vai strāvas zuduma, par cenu — neliels diska ieraksts katrā klikšķī. Nepieciešams tikai tad, ja slēdzis vada slēdzenes, durvis vai tamlīdzīgi."
         }
-      }
-    }
-  },
-  "selector": {
-    "event_mode": {
-      "options": {
-        "advanced": "Paplašinātais (visi notikumu veidi, sensori un kopnes notikumi)",
-        "simple": "Vienkāršais (viens nospiešanas notikums par klikšķi)"
       }
     }
   }

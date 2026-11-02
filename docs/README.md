@@ -1,13 +1,7 @@
 # Documentation
 
-This folder contains technical documentation for `enocean_ble`.
+User documentation for the EnOcean BLE integration. Installation, device setup, event types and automation
+examples are in the main [README](../README.md).
 
-## Contents
-
-- `PROJECT.md`: project scope and limits.
-- `ARCHITECTURE.md`: runtime architecture and data path.
-- `CONFIG_FLOW.md`: current commissioning flow behavior.
-- `FLOW_TRACE_V3.md`: debug trace model and event taxonomy.
-- `OPERATIONS.md`: deploy/validation/release runbook.
-- `TROUBLESHOOTING.md`: common issues and practical fixes.
-- `ROADMAP.md`: release and follow-up plan.
+- [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md): common problems and how to fix them.
+- [`DEBUGGING.md`](DEBUGGING.md): how to enable debug logging and read the log.

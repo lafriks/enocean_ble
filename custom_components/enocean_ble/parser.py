@@ -10,6 +10,8 @@ from .const import (
     ENOCEAN_MAC_PREFIX,
     MIC_LENGTH,
     STATUS_BIT_ENERGY_BOW,
+    TELEGRAM_PRESS,
+    TELEGRAM_RELEASE,
 )
 from .crypto import verify_mic
 
@@ -113,7 +115,7 @@ def _extract_active_buttons(status: int) -> tuple[str, ...]:
 
 def _extract_event_type(status: int) -> str:
     # Energy Bar bit encodes push/release action. Long events are derived at runtime.
-    return "press" if (status & STATUS_BIT_ENERGY_BOW) else "release"
+    return TELEGRAM_PRESS if (status & STATUS_BIT_ENERGY_BOW) else TELEGRAM_RELEASE
 
 
 def parse_commissioning_telegram(telegram: bytes) -> ParsedCommissioningTelegram:

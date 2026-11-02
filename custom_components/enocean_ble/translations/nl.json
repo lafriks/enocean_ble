@@ -25,22 +25,13 @@
   "options": {
     "step": {
       "init": {
-        "title": "Modus voor knopgebeurtenissen",
-        "description": "Kies hoe knopdrukken in Home Assistant beschikbaar worden gemaakt. Het wijzigen van de modus herlaadt het apparaat.",
+        "title": "EnOcean BLE-opties",
         "data": {
-          "event_mode": "Gebeurtenismodus"
+          "strict_replay_protection": "Strikte replay-beveiliging"
         },
         "data_description": {
-          "event_mode": "Eenvoudig: elke knopentiteit (A0, A1, B0, B1) geeft per klik slechts één `press`-gebeurtenis; gebeurtenissensoren en enocean_ble_button_event-busgebeurtenissen worden verwijderd. Geavanceerd: alle gebeurtenistypen (indrukken, loslaten, lang indrukken, …), gebeurtenissensoren en busgebeurtenissen."
+          "strict_replay_protection": "De telegramteller na elke druk op de knop naar schijf schrijven in plaats van enkele seconden later. Voorkomt het eenmalig opnieuw afspelen van opgenomen radioverkeer na een crash of stroomuitval, ten koste van een kleine schijfschrijfactie per klik. Alleen nodig als de schakelaar sloten, deuren of iets dergelijks bedient."
         }
-      }
-    }
-  },
-  "selector": {
-    "event_mode": {
-      "options": {
-        "advanced": "Geavanceerd (alle gebeurtenistypen, sensoren en busgebeurtenissen)",
-        "simple": "Eenvoudig (één drukgebeurtenis per klik)"
       }
     }
   }

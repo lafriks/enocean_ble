@@ -21,9 +21,6 @@ python_version = "3.14"
 strict = true
 show_error_codes = true
 warn_unused_configs = true
-exclude = [
-  "^local_resources/"
-]
 
 [[tool.mypy.overrides]]
 module = [

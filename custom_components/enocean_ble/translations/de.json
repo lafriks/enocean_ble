@@ -25,22 +25,13 @@
   "options": {
     "step": {
       "init": {
-        "title": "Tasten-Ereignismodus",
-        "description": "Wählen Sie, wie Tastendrücke in Home Assistant bereitgestellt werden. Eine Änderung des Modus lädt das Gerät neu.",
+        "title": "EnOcean BLE Optionen",
         "data": {
-          "event_mode": "Ereignismodus"
+          "strict_replay_protection": "Strenger Replay-Schutz"
         },
         "data_description": {
-          "event_mode": "Einfach: Jede Tasten-Entität (A0, A1, B0, B1) löst pro Tastendruck nur ein `press`-Ereignis aus; Ereignissensoren und enocean_ble_button_event-Bus-Ereignisse werden entfernt. Erweitert: alle Ereignistypen (Drücken, Loslassen, langes Drücken, …), Ereignissensoren und Bus-Ereignisse."
+          "strict_replay_protection": "Den Telegrammzähler nach jedem Tastendruck auf die Festplatte schreiben statt einige Sekunden später. Verhindert ein einmaliges Wiedereinspielen aufgezeichneter Funktelegramme nach einem Absturz oder Stromausfall, kostet aber einen kleinen Schreibzugriff pro Tastendruck. Nur nötig, wenn der Schalter Schlösser, Türen o. Ä. steuert."
         }
-      }
-    }
-  },
-  "selector": {
-    "event_mode": {
-      "options": {
-        "advanced": "Erweitert (alle Ereignistypen, Sensoren und Bus-Ereignisse)",
-        "simple": "Einfach (ein Drück-Ereignis pro Tastendruck)"
       }
     }
   }
