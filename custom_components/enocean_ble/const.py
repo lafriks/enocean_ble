@@ -33,6 +33,7 @@ TELEGRAM_RELEASE = "release"
 EVENT_TYPE_PRESS = "press"
 
 DATA_TELEGRAM_MIN_LENGTH = 9
+COMMISSIONING_TELEGRAM_LENGTH = 26
 MIC_LENGTH = 4
 
 # Last accepted sequence counter is persisted so replay protection survives restarts.

@@ -10,6 +10,7 @@ from .const import (
     ATTR_MAC_ADDRESS,
     ATTR_RSSI,
     ATTR_SEQUENCE_COUNTER,
+    COMMISSIONING_TELEGRAM_LENGTH,
     CONF_MAC_ADDRESS,
     CONF_SECURITY_KEY,
     CONF_STRICT_REPLAY_PROTECTION,
@@ -221,7 +222,7 @@ def _process_advertisement(
         return
 
     security_key_hex = str(entry_data.get(CONF_SECURITY_KEY, ""))
-    if len(manufacturer_data) == 26:
+    if len(manufacturer_data) == COMMISSIONING_TELEGRAM_LENGTH:
         _LOGGER.debug(
             "commissioning_detected entry_id=%s mac=%s payload_len=%s",
             entry.entry_id,

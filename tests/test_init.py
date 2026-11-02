@@ -80,8 +80,12 @@ async def _setup_with(
             async_unload_platforms=AsyncMock(return_value=True),
         ),
     )
-    with patch("homeassistant.helpers.storage.Store", return_value=store):
+    with (
+        patch("homeassistant.helpers.storage.Store", return_value=store),
+        patch("homeassistant.components.bluetooth.async_register_callback") as register,
+    ):
         assert await async_setup_entry(hass, entry) is True
+    hass.register_callback = register
     return hass, entry, store
 
 
@@ -137,9 +141,8 @@ async def test_remove_entry_deletes_store() -> None:
 
 
 async def test_bluetooth_callback_is_filtered_by_address() -> None:
-    with patch("homeassistant.components.bluetooth.async_register_callback") as register:
-        await _setup(None)
-    matcher = register.call_args.args[2]
+    hass, _, _ = await _setup(None)
+    matcher = hass.register_callback.call_args.args[2]
     assert matcher == {
         "address": _MAC,
         "manufacturer_id": ENOCEAN_MANUFACTURER_ID,

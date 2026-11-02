@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 from .const import (
     BUTTON_BIT_TO_NAME,
+    COMMISSIONING_TELEGRAM_LENGTH,
     ENOCEAN_MAC_PREFIX,
     MIC_LENGTH,
     STATUS_BIT_ENERGY_BOW,
@@ -120,7 +121,7 @@ def _extract_event_type(status: int) -> str:
 
 def parse_commissioning_telegram(telegram: bytes) -> ParsedCommissioningTelegram:
     """Parse commissioning telegram payload from manufacturer data."""
-    if len(telegram) != 26:
+    if len(telegram) != COMMISSIONING_TELEGRAM_LENGTH:
         raise ValueError("EnOcean commissioning telegram must be exactly 26 bytes")
 
     sequence_counter = int.from_bytes(telegram[0:4], byteorder="little")

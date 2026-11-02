@@ -94,3 +94,4 @@ Commissioning lines are prefixed with `[ENOCEAN_FLOW]`:
 | `COMMISSIONING_READY` | The commissioning telegram was received and the key is stored. |
 | `COMMISSIONING_TIMEOUT` | No commissioning telegram within 2 minutes. Repeat the button sequence. |
 | `COMMISSIONING_MAC_MISMATCH` | A commissioning telegram from a different switch was received. Keep other switches out of commissioning mode. |
+| `COMMISSIONING_INVALID` | A commissioning telegram was received but could not be used (see the error in the same line). Repeat the sequence. |
