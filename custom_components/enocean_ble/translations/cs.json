@@ -15,7 +15,8 @@
     },
     "abort": {
       "no_bluetooth_discovery": "Toto nastavení musí začít z objeveného Bluetooth zařízení.",
-      "not_enocean_prefix": "Toto objevené zařízení nepoužívá MAC prefix EnOcean BLE (E2:15)."
+      "not_enocean_prefix": "Toto objevené zařízení nepoužívá MAC prefix EnOcean BLE (E2:15).",
+      "reconfigure_successful": "Rekonfigurace proběhla úspěšně."
     },
     "error": {
       "commissioning_not_detected": "Během 2 minut nebyl přijat commissioning telegram. Zkuste to znovu. Pokud to po více pokusech stále nefunguje, můžete zkusit tovární reset. Nejprve si přečtěte upozornění k resetu v dokumentaci.",
@@ -33,6 +34,12 @@
           "strict_replay_protection": "Zapisovat čítač telegramů na disk po každém stisku tlačítka místo o několik sekund později. Zabraňuje jednorázovému přehrání zaznamenaného rádiového provozu po pádu nebo výpadku napájení za cenu malého zápisu na disk při každém stisku. Potřebné jen tehdy, když spínač ovládá zámky, dveře apod."
         }
       }
+    }
+  },
+  "issues": {
+    "auth_failed": {
+      "title": "{name} již nelze ověřit",
+      "description": "Telegramy ze spínače EnOcean **{name}** ({mac}) neprocházejí ověřením. Spínač byl pravděpodobně obnoven do továrního nastavení nebo znovu zprovozněn jiným systémem, takže se změnil jeho bezpečnostní klíč.\n\nOtevřete [stránku zařízení]({device_url}), v nabídce se třemi tečkami zvolte **Překonfigurovat** a zopakujte postup zprovoznění. Automatizace a entity zůstanou zachovány."
     }
   }
 }

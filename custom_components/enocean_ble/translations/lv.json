@@ -15,7 +15,8 @@
     },
     "abort": {
       "no_bluetooth_discovery": "Šī iestatīšana jāsāk no Bluetooth atklātas ierīces.",
-      "not_enocean_prefix": "Šī atklātā ierīce neizmanto EnOcean BLE MAC prefiksu (E2:15)."
+      "not_enocean_prefix": "Šī atklātā ierīce neizmanto EnOcean BLE MAC prefiksu (E2:15).",
+      "reconfigure_successful": "Pārkonfigurēšana bija veiksmīga."
     },
     "error": {
       "commissioning_not_detected": "2 minūšu laikā netika saņemta pievienošanas telegramma. Mēģiniet vēlreiz. Ja pēc vairākiem mēģinājumiem tas joprojām nedarbojas, varat mēģināt atiestatīt rūpnīcas iestatījumus. Vispirms izlasiet atiestatīšanas brīdinājumu dokumentācijā.",
@@ -33,6 +34,12 @@
           "strict_replay_protection": "Ierakstīt telegrammu skaitītāju diskā pēc katra pogas nospiediena, nevis dažas sekundes vēlāk. Novērš ierakstītas radio datplūsmas vienreizēju atkārtošanu pēc avārijas vai strāvas zuduma, par cenu — neliels diska ieraksts katrā klikšķī. Nepieciešams tikai tad, ja slēdzis vada slēdzenes, durvis vai tamlīdzīgi."
         }
       }
+    }
+  },
+  "issues": {
+    "auth_failed": {
+      "title": "{name} vairs nevar autentificēt",
+      "description": "EnOcean slēdža **{name}** ({mac}) telegrammas neiztur autentifikāciju. Visticamāk, slēdzim tika atjaunoti rūpnīcas iestatījumi vai to pārpievienoja cita sistēma, tāpēc tā drošības atslēga ir mainījusies.\n\nAtveriet [ierīces lapu]({device_url}), trīs punktu izvēlnē izvēlieties **Pārkonfigurēt** un atkārtojiet pievienošanas secību. Automatizācijas un entītijas tiek saglabātas."
     }
   }
 }

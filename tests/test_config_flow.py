@@ -10,10 +10,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from homeassistant.data_entry_flow import FlowResultType
 
+from custom_components.enocean_ble import EnOceanBleData
 from custom_components.enocean_ble.config_flow import (
     EnOceanBleConfigFlow,
-    _extract_security_key,
     _is_commissioning_telegram,
+    _parse_commissioning,
 )
 from custom_components.enocean_ble.const import ENOCEAN_MANUFACTURER_ID
 
@@ -49,14 +50,14 @@ def _flow() -> EnOceanBleConfigFlow:
     return flow
 
 
-def test_extract_security_key_accepts_both_address_orders() -> None:
-    assert _extract_security_key(_COMMISSIONING, "E2:15:00:00:1B:9F") == _KEY
-    assert _extract_security_key(_COMMISSIONING, "9F:1B:00:00:15:E2") == _KEY
+def test_parse_commissioning_accepts_both_address_orders() -> None:
+    assert _parse_commissioning(_COMMISSIONING, "E2:15:00:00:1B:9F").security_key_hex == _KEY
+    assert _parse_commissioning(_COMMISSIONING, "9F:1B:00:00:15:E2").security_key_hex == _KEY
 
 
-def test_extract_security_key_rejects_other_switch() -> None:
+def test_parse_commissioning_rejects_other_switch() -> None:
     with pytest.raises(ValueError, match="mismatch"):
-        _extract_security_key(_COMMISSIONING, "E2:15:00:00:00:01")
+        _parse_commissioning(_COMMISSIONING, "E2:15:00:00:00:01")
 
 
 def test_is_commissioning_telegram() -> None:
@@ -163,3 +164,46 @@ async def test_remove_cancels_pending_wait() -> None:
     flow.async_remove()
     await asyncio.sleep(0)
     assert task.cancelled()
+
+
+async def test_reconfigure_replaces_key_and_resets_counter() -> None:
+    data = EnOceanBleData(
+        mac_address=_MAC,
+        security_key="old",
+        store=MagicMock(),
+        save_delay=5.0,
+        last_sequence_counter=900,
+        last_press_seq={"A0": 899},
+        auth_failures=3,
+    )
+    entry: Any = SimpleNamespace(
+        entry_id="entry1", title="Bedroom", data={"mac_address": _MAC, "security_key": "old"}
+    )
+    entry.runtime_data = data
+    flow = _flow()
+    flow.context = {"source": "reconfigure", "entry_id": "entry1"}
+    flow._get_reconfigure_entry = MagicMock(return_value=entry)  # type: ignore[method-assign]
+    flow.async_update_reload_and_abort = MagicMock(  # type: ignore[method-assign]
+        return_value={"type": FlowResultType.ABORT, "reason": "reconfigure_successful"}
+    )
+
+    with patch(
+        "custom_components.enocean_ble.config_flow.async_process_advertisements",
+        AsyncMock(return_value=_service_info(_COMMISSIONING)),
+    ):
+        result = await flow.async_step_reconfigure()
+        assert result["type"] is FlowResultType.SHOW_PROGRESS
+        await _task(flow)
+    result = await flow.async_step_commissioning()
+    assert result["step_id"] == "bluetooth_confirm"
+
+    result = await flow.async_step_bluetooth_confirm({})
+
+    assert result["reason"] == "reconfigure_successful"
+    flow.async_update_reload_and_abort.assert_called_once_with(
+        entry, data_updates={"security_key": _KEY}
+    )
+    assert data.security_key == _KEY
+    assert data.last_sequence_counter == 0x171
+    assert data.last_press_seq == {}
+    assert data.auth_failures == 0

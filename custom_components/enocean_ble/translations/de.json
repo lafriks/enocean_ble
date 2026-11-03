@@ -15,7 +15,8 @@
     },
     "abort": {
       "no_bluetooth_discovery": "Dieses Setup muss mit einem per Bluetooth gefundenen Gerät gestartet werden.",
-      "not_enocean_prefix": "Dieses gefundene Gerät verwendet nicht den EnOcean BLE MAC-Präfix (E2:15)."
+      "not_enocean_prefix": "Dieses gefundene Gerät verwendet nicht den EnOcean BLE MAC-Präfix (E2:15).",
+      "reconfigure_successful": "Die Neukonfiguration war erfolgreich."
     },
     "error": {
       "commissioning_not_detected": "Innerhalb von 2 Minuten wurde kein Kommissionierungs-Telegramm empfangen. Versuchen Sie es erneut. Wenn es nach mehreren Versuchen weiterhin nicht funktioniert, können Sie einen Werksreset versuchen. Lesen Sie vorher den Reset-Hinweis in der Dokumentation.",
@@ -33,6 +34,12 @@
           "strict_replay_protection": "Den Telegrammzähler nach jedem Tastendruck auf die Festplatte schreiben statt einige Sekunden später. Verhindert ein einmaliges Wiedereinspielen aufgezeichneter Funktelegramme nach einem Absturz oder Stromausfall, kostet aber einen kleinen Schreibzugriff pro Tastendruck. Nur nötig, wenn der Schalter Schlösser, Türen o. Ä. steuert."
         }
       }
+    }
+  },
+  "issues": {
+    "auth_failed": {
+      "title": "{name} kann nicht mehr authentifiziert werden",
+      "description": "Telegramme des EnOcean-Schalters **{name}** ({mac}) bestehen die Authentifizierung nicht. Der Schalter wurde vermutlich auf Werkseinstellungen zurückgesetzt oder von einem anderen System neu eingelernt, sodass sich sein Sicherheitsschlüssel geändert hat.\n\nÖffnen Sie die [Geräteseite]({device_url}), wählen Sie im Dreipunktmenü **Neu konfigurieren** und wiederholen Sie die Einlernsequenz. Automationen und Entitäten bleiben erhalten."
     }
   }
 }

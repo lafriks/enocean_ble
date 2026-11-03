@@ -15,7 +15,8 @@
     },
     "abort": {
       "no_bluetooth_discovery": "Denna konfiguration måste startas från en upptäckt Bluetooth-enhet.",
-      "not_enocean_prefix": "Den upptäckta enheten använder inte EnOcean BLE MAC-prefix (E2:15)."
+      "not_enocean_prefix": "Den upptäckta enheten använder inte EnOcean BLE MAC-prefix (E2:15).",
+      "reconfigure_successful": "Omkonfigurationen lyckades."
     },
     "error": {
       "commissioning_not_detected": "Ingen commissioning-telegram togs emot inom 2 minuter. Försök igen. Om det fortfarande inte fungerar efter flera försök kan du prova en fabriksåterställning. Läs först reset-varningen i dokumentationen.",
@@ -33,6 +34,12 @@
           "strict_replay_protection": "Skriv telegramräknaren till disk efter varje knapptryckning i stället för några sekunder senare. Förhindrar en engångsuppspelning av inspelad radiotrafik efter en krasch eller ett strömavbrott, till priset av en liten diskskrivning per klick. Behövs bara om strömbrytaren styr lås, dörrar eller liknande."
         }
       }
+    }
+  },
+  "issues": {
+    "auth_failed": {
+      "title": "{name} kan inte längre autentiseras",
+      "description": "Telegram från EnOcean-strömbrytaren **{name}** ({mac}) klarar inte autentiseringen. Strömbrytaren har troligen fabriksåterställts eller parats om av ett annat system, så dess säkerhetsnyckel har ändrats.\n\nÖppna [enhetssidan]({device_url}), välj **Konfigurera om** i trepunktsmenyn och upprepa parningssekvensen. Automationer och entiteter behålls."
     }
   }
 }

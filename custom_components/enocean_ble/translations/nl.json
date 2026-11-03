@@ -15,7 +15,8 @@
     },
     "abort": {
       "no_bluetooth_discovery": "Deze configuratie moet gestart worden vanaf een ontdekt Bluetooth-apparaat.",
-      "not_enocean_prefix": "Dit ontdekte apparaat gebruikt niet de EnOcean BLE MAC-prefix (E2:15)."
+      "not_enocean_prefix": "Dit ontdekte apparaat gebruikt niet de EnOcean BLE MAC-prefix (E2:15).",
+      "reconfigure_successful": "De herconfiguratie is geslaagd."
     },
     "error": {
       "commissioning_not_detected": "Binnen 2 minuten is geen commissioning-telegram ontvangen. Probeer opnieuw. Als het na meerdere pogingen nog steeds niet werkt, kun je een fabrieksreset proberen. Lees eerst de resetdisclaimer in de documentatie.",
@@ -33,6 +34,12 @@
           "strict_replay_protection": "De telegramteller na elke druk op de knop naar schijf schrijven in plaats van enkele seconden later. Voorkomt het eenmalig opnieuw afspelen van opgenomen radioverkeer na een crash of stroomuitval, ten koste van een kleine schijfschrijfactie per klik. Alleen nodig als de schakelaar sloten, deuren of iets dergelijks bedient."
         }
       }
+    }
+  },
+  "issues": {
+    "auth_failed": {
+      "title": "{name} kan niet meer worden geverifieerd",
+      "description": "Telegrammen van de EnOcean-schakelaar **{name}** ({mac}) doorstaan de verificatie niet. De schakelaar is waarschijnlijk teruggezet naar de fabrieksinstellingen of opnieuw gekoppeld door een ander systeem, waardoor de beveiligingssleutel is gewijzigd.\n\nOpen de [apparaatpagina]({device_url}), kies **Opnieuw configureren** in het menu met drie puntjes en herhaal de koppelprocedure. Automatiseringen en entiteiten blijven behouden."
     }
   }
 }

@@ -38,6 +38,11 @@ DATA_TELEGRAM_MIN_LENGTH = 9
 COMMISSIONING_TELEGRAM_LENGTH = 26
 MIC_LENGTH = 4
 
+# After this many consecutive telegrams that fail authentication a repair issue is raised;
+# the switch was most likely factory-reset and needs to be re-commissioned.
+AUTH_FAILURE_THRESHOLD = 3
+ISSUE_AUTH_FAILED = "auth_failed_{entry_id}"
+
 # Last accepted sequence counter is persisted so replay protection survives restarts.
 STORAGE_VERSION = 1
 STORAGE_SAVE_DELAY_SECONDS = 5.0

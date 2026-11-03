@@ -46,10 +46,11 @@ log lines and your switch model.
 
 ## Switch stops responding after a factory reset
 
-- The integration ignores telegrams whose counter is not higher than the last one it accepted, and remembers
-  that counter across restarts. This protects against replayed radio traffic.
-- If a factory reset restarts the switch's counter, its telegrams are now ignored.
-- Delete the device in Home Assistant and add it again. This also clears the stored counter.
+- A factory reset (or pairing the switch with another system) gives the switch a new security key, so its
+  telegrams can no longer be authenticated. After a few such telegrams a repair issue appears under
+  Settings -> System -> Repairs.
+- Open the device page, choose **Reconfigure** from the three-dot menu and repeat the commissioning
+  sequence. The device, its entities and your automations are kept.
 
 ## Some clicks are missed
 

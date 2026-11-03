@@ -15,7 +15,8 @@
     },
     "abort": {
       "no_bluetooth_discovery": "Esta configuração deve ser iniciada a partir de um dispositivo Bluetooth descoberto.",
-      "not_enocean_prefix": "Este dispositivo descoberto não usa o prefixo MAC EnOcean BLE (E2:15)."
+      "not_enocean_prefix": "Este dispositivo descoberto não usa o prefixo MAC EnOcean BLE (E2:15).",
+      "reconfigure_successful": "A reconfiguração foi concluída com sucesso."
     },
     "error": {
       "commissioning_not_detected": "Nenhum telegrama de comissionamento foi recebido em 2 minutos. Tente novamente. Se continuar sem funcionar após várias tentativas, você pode tentar um reset de fábrica. Leia primeiro o aviso de reset na documentação.",
@@ -33,6 +34,12 @@
           "strict_replay_protection": "Gravar o contador de telegramas no disco após cada pressionamento em vez de alguns segundos depois. Evita uma repetição única do tráfego de rádio gravado após uma falha ou queda de energia, ao custo de uma pequena gravação em disco por clique. Necessário apenas se o interruptor controla fechaduras, portas ou similares."
         }
       }
+    }
+  },
+  "issues": {
+    "auth_failed": {
+      "title": "{name} não pode mais ser autenticado",
+      "description": "Os telegramas do interruptor EnOcean **{name}** ({mac}) falham na autenticação. O interruptor provavelmente foi restaurado para os padrões de fábrica ou pareado novamente por outro sistema, então sua chave de segurança mudou.\n\nAbra a [página do dispositivo]({device_url}), escolha **Reconfigurar** no menu de três pontos e repita a sequência de pareamento. Automações e entidades são mantidas."
     }
   }
 }

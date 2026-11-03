@@ -15,6 +15,7 @@ from custom_components.enocean_ble import (
     async_unload_entry,
 )
 from custom_components.enocean_ble.const import (
+    AUTH_FAILURE_THRESHOLD,
     CONF_MAC_ADDRESS,
     CONF_SECURITY_KEY,
     ENOCEAN_MANUFACTURER_ID,
@@ -74,10 +75,20 @@ async def _setup(
     with (
         patch("custom_components.enocean_ble.Store", return_value=store),
         patch("custom_components.enocean_ble.async_register_callback") as register,
+        patch("custom_components.enocean_ble.ir.async_delete_issue"),
     ):
         assert await async_setup_entry(hass, entry) is True
     hass.register_callback = register
     return hass, entry, store
+
+
+def _wrong_key_telegram(seq: int) -> Any:
+    payload = bytes([0x03])
+    mic = calculate_mic(bytes.fromhex("ff" * 16), bytes.fromhex("DDCCBBAA15E2"), seq, payload)
+    telegram = seq.to_bytes(4, byteorder="little") + payload + mic
+    return SimpleNamespace(
+        address=_MAC, rssi=-60, manufacturer_data={ENOCEAN_MANUFACTURER_ID: telegram}
+    )
 
 
 async def test_setup_restores_sequence_counter_and_rejects_replay() -> None:
@@ -239,3 +250,45 @@ async def test_diagnostics_redact_security_key() -> None:
     assert diagnostics["runtime"]["last_sequence_counter"] == 9
     assert diagnostics["runtime"]["last_press_seq"] == {"A1": 8}
     assert _KEY_HEX not in str(diagnostics)
+
+
+async def test_repair_issue_after_repeated_auth_failures() -> None:
+    hass, entry, _store = await _setup()
+    device = SimpleNamespace(id="dev42")
+    with (
+        patch("custom_components.enocean_ble.ir.async_create_issue") as create,
+        patch("custom_components.enocean_ble.ir.async_delete_issue") as delete,
+        patch("custom_components.enocean_ble.dr.async_get") as dr_get,
+        patch("custom_components.enocean_ble._emit_button_event"),
+    ):
+        dr_get.return_value.async_get_device.return_value = device
+        for seq in range(1, AUTH_FAILURE_THRESHOLD):
+            _process_advertisement(hass, entry, _wrong_key_telegram(seq))
+        create.assert_not_called()
+
+        _process_advertisement(hass, entry, _wrong_key_telegram(AUTH_FAILURE_THRESHOLD))
+        create.assert_called_once()
+        assert create.call_args.args[2] == "auth_failed_entry1"
+        placeholders = create.call_args.kwargs["translation_placeholders"]
+        assert placeholders["device_url"] == "/config/devices/device/dev42"
+        assert placeholders["mac"] == _MAC
+
+        # A valid telegram clears the issue and the counter.
+        _process_advertisement(hass, entry, _service_info(1))
+        delete.assert_called_once_with(hass, "enocean_ble", "auth_failed_entry1")
+    assert entry.runtime_data.auth_failures == 0
+
+
+async def test_setup_clears_stale_repair_issue() -> None:
+    with patch("custom_components.enocean_ble.ir.async_delete_issue") as delete:
+        store = MagicMock()
+        store.async_load = AsyncMock(return_value=None)
+        hass: Any = SimpleNamespace(
+            config_entries=SimpleNamespace(async_forward_entry_setups=AsyncMock())
+        )
+        with (
+            patch("custom_components.enocean_ble.Store", return_value=store),
+            patch("custom_components.enocean_ble.async_register_callback"),
+        ):
+            assert await async_setup_entry(hass, _entry()) is True
+    delete.assert_called_once_with(hass, "enocean_ble", "auth_failed_entry1")

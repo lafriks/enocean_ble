@@ -13,10 +13,11 @@ from homeassistant.components.bluetooth import (
     BluetoothServiceInfoBleak,
     async_process_advertisements,
 )
-from homeassistant.config_entries import ConfigFlowResult
+from homeassistant.config_entries import SOURCE_RECONFIGURE, ConfigFlowResult
 from homeassistant.core import callback
 from homeassistant.helpers.selector import BooleanSelector
 
+from . import EnOceanBleData, async_reset_sequence
 from .const import (
     COMMISSIONING_TELEGRAM_LENGTH,
     CONF_MAC_ADDRESS,
@@ -28,7 +29,7 @@ from .const import (
     ENOCEAN_MAC_PREFIX,
     ENOCEAN_MANUFACTURER_ID,
 )
-from .parser import parse_commissioning_telegram
+from .parser import ParsedCommissioningTelegram, parse_commissioning_telegram
 
 _LOGGER = logging.getLogger(__name__)
 FLOW_TAG = "[ENOCEAN_FLOW]"
@@ -54,9 +55,13 @@ class EnOceanBleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Initialize config flow state."""
         self._mac: str | None = None
         self._title: str | None = None
-        self._security_key: str | None = None
+        self._commissioning: ParsedCommissioningTelegram | None = None
         self._task: asyncio.Task[None] | None = None
         self._error: str | None = None
+
+    @property
+    def _security_key(self) -> str | None:
+        return self._commissioning.security_key_hex if self._commissioning else None
 
     @callback
     def async_remove(self) -> None:
@@ -94,12 +99,22 @@ class EnOceanBleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         # The switch may already be in commissioning mode; then discovery itself carried the key.
         if _is_commissioning_telegram(discovery_info):
             try:
-                self._security_key = _extract_security_key(
+                self._commissioning = _parse_commissioning(
                     discovery_info.manufacturer_data[ENOCEAN_MANUFACTURER_ID], mac
                 )
             except ValueError:
                 pass
 
+        return await self.async_step_commissioning()
+
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Re-commission an existing switch, e.g. after a factory reset."""
+        entry = self._get_reconfigure_entry()
+        self._mac = entry.data[CONF_MAC_ADDRESS]
+        self._title = entry.title
+        self._commissioning = None
         return await self.async_step_commissioning()
 
     async def async_step_commissioning(
@@ -159,7 +174,7 @@ class EnOceanBleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             BluetoothScanningMode.PASSIVE,
             COMMISSIONING_TIMEOUT,
         )
-        self._security_key = _extract_security_key(
+        self._commissioning = _parse_commissioning(
             service_info.manufacturer_data[ENOCEAN_MANUFACTURER_ID], self._mac
         )
         _LOGGER.debug("%s COMMISSIONING_READY mac=%s", FLOW_TAG, self._mac)
@@ -168,7 +183,7 @@ class EnOceanBleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Ask the user to leave commissioning mode and confirm."""
-        if self._mac is None or self._security_key is None:
+        if self._mac is None or self._commissioning is None:
             return self.async_abort(reason="no_bluetooth_discovery")
 
         if user_input is None:
@@ -178,9 +193,20 @@ class EnOceanBleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 description_placeholders={"name": self._title or self._mac, "mac": self._mac},
             )
 
+        key = self._commissioning.security_key_hex
+        if self.source == SOURCE_RECONFIGURE:
+            entry = self._get_reconfigure_entry()
+            # The switch starts a new counter sequence with the new key. Reset the running
+            # state too: unload persists it, so a reload would otherwise restore the old counter.
+            data: EnOceanBleData | None = getattr(entry, "runtime_data", None)
+            if data is not None:
+                data.security_key = key
+                async_reset_sequence(data, self._commissioning.sequence_counter)
+            return self.async_update_reload_and_abort(entry, data_updates={CONF_SECURITY_KEY: key})
+
         return self.async_create_entry(
             title=self._title or self._mac,
-            data={CONF_MAC_ADDRESS: self._mac, CONF_SECURITY_KEY: self._security_key},
+            data={CONF_MAC_ADDRESS: self._mac, CONF_SECURITY_KEY: key},
         )
 
 
@@ -209,8 +235,8 @@ def _is_commissioning_telegram(service_info: BluetoothServiceInfoBleak) -> bool:
     return payload is not None and len(payload) == COMMISSIONING_TELEGRAM_LENGTH
 
 
-def _extract_security_key(payload: bytes, mac: str) -> str:
-    """Parse a commissioning telegram and return its key; the source address must match."""
+def _parse_commissioning(payload: bytes, mac: str) -> ParsedCommissioningTelegram:
+    """Parse a commissioning telegram; its source address must match the switch."""
     commissioning = parse_commissioning_telegram(payload)
     source_hex = commissioning.static_source_address_hex
     # The source address is transmitted little-endian; accept both orders.
@@ -220,7 +246,7 @@ def _extract_security_key(payload: bytes, mac: str) -> str:
             "%s COMMISSIONING_MAC_MISMATCH mac=%s payload_mac=%s", FLOW_TAG, mac, candidates
         )
         raise ValueError("commissioning_static_source_mismatch")
-    return commissioning.security_key_hex
+    return commissioning
 
 
 def _format_mac(hex6: str) -> str:

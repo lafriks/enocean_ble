@@ -118,6 +118,12 @@ actions:
       entity_id: light.living_room
 ```
 
+## Re-commissioning
+
+If a switch was factory-reset or paired with another system, its telegrams can no longer be authenticated and
+a repair issue appears. Open the device page, choose **Reconfigure** from the three-dot menu and repeat the
+commissioning sequence; entities and automations are kept.
+
 ## Troubleshooting
 
 See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) and [docs/DEBUGGING.md](docs/DEBUGGING.md).

@@ -15,7 +15,8 @@
     },
     "abort": {
       "no_bluetooth_discovery": "This setup must start from a discovered Bluetooth device.",
-      "not_enocean_prefix": "This discovered device does not use the EnOcean BLE MAC prefix (E2:15)."
+      "not_enocean_prefix": "This discovered device does not use the EnOcean BLE MAC prefix (E2:15).",
+      "reconfigure_successful": "Reconfiguration was successful."
     },
     "error": {
       "commissioning_not_detected": "No commissioning telegram was received within 2 minutes. Try again. If it still does not work after multiple attempts, you can try a factory reset. Please read the reset disclaimer in the documentation first.",
@@ -33,6 +34,12 @@
           "strict_replay_protection": "Write the telegram counter to disk after every button press instead of a few seconds later. Prevents a one-time replay of recorded radio traffic after a crash or power loss, at the cost of a small disk write per click. Only needed if the switch controls locks, doors or similar."
         }
       }
+    }
+  },
+  "issues": {
+    "auth_failed": {
+      "title": "{name} can no longer be authenticated",
+      "description": "Telegrams from the EnOcean switch **{name}** ({mac}) fail authentication. The switch was most likely factory-reset or re-commissioned by another system, so its security key changed.\n\nOpen the [device page]({device_url}), choose **Reconfigure** from the three-dot menu and repeat the commissioning sequence. Automations and entities are kept."
     }
   }
 }

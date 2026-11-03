@@ -16,7 +16,9 @@ from homeassistant.components.bluetooth import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.storage import Store
 
@@ -24,6 +26,7 @@ from .const import (
     ATTR_MAC_ADDRESS,
     ATTR_RSSI,
     ATTR_SEQUENCE_COUNTER,
+    AUTH_FAILURE_THRESHOLD,
     COMMISSIONING_TELEGRAM_LENGTH,
     CONF_MAC_ADDRESS,
     CONF_SECURITY_KEY,
@@ -34,6 +37,7 @@ from .const import (
     DOMAIN,
     ENOCEAN_MAC_PREFIX,
     ENOCEAN_MANUFACTURER_ID,
+    ISSUE_AUTH_FAILED,
     LEGACY_PLATFORMS,
     PLATFORMS,
     SIGNAL_BUTTON_EVENT,
@@ -60,6 +64,8 @@ class EnOceanBleData:
     last_sequence_counter: int = -1
     # Per button: sequence counter of the last press telegram seen.
     last_press_seq: dict[str, int] = field(default_factory=dict)
+    # Consecutive telegrams that failed MIC verification (wrong key after a reset).
+    auth_failures: int = 0
 
 
 type EnOceanBleConfigEntry = ConfigEntry[EnOceanBleData]
@@ -81,6 +87,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: EnOceanBleConfigEntry) -
         last_press_seq={k: int(v) for k, v in stored.get("last_press_seq", {}).items()},
     )
     entry.runtime_data = data
+    # A (re)load starts with a clean slate; the issue is raised again if telegrams keep failing.
+    ir.async_delete_issue(hass, DOMAIN, ISSUE_AUTH_FAILED.format(entry_id=entry.entry_id))
     _LOGGER.debug(
         "setup_entry entry_id=%s mac=%s last_sequence_counter=%s save_delay=%s security_key_present=%s security_key_fingerprint=%s",
         entry.entry_id,
@@ -134,6 +142,46 @@ def _sequence_data(data: EnOceanBleData) -> dict[str, Any]:
 
 def _schedule_sequence_save(data: EnOceanBleData) -> None:
     data.store.async_delay_save(lambda: _sequence_data(data), data.save_delay)
+
+
+@callback
+def async_reset_sequence(data: EnOceanBleData, sequence_counter: int) -> None:
+    """Start replay protection over from a new baseline (new key after re-commissioning)."""
+    data.last_sequence_counter = sequence_counter
+    data.last_press_seq.clear()
+    data.auth_failures = 0
+
+
+def _record_auth_failure(hass: HomeAssistant, entry: ConfigEntry, data: EnOceanBleData) -> None:
+    """Count a telegram that failed authentication and raise a repair issue when it persists."""
+    data.auth_failures += 1
+    if data.auth_failures < AUTH_FAILURE_THRESHOLD:
+        return
+    device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, entry.entry_id)})
+    device_url = (
+        f"/config/devices/device/{device.id}"
+        if device
+        else f"/config/integrations/integration/{DOMAIN}"
+    )
+    ir.async_create_issue(
+        hass,
+        DOMAIN,
+        ISSUE_AUTH_FAILED.format(entry_id=entry.entry_id),
+        is_fixable=False,
+        severity=ir.IssueSeverity.ERROR,
+        translation_key="auth_failed",
+        translation_placeholders={
+            "name": entry.title,
+            "mac": data.mac_address,
+            "device_url": device_url,
+        },
+    )
+
+
+def _record_auth_success(hass: HomeAssistant, entry: ConfigEntry, data: EnOceanBleData) -> None:
+    if data.auth_failures >= AUTH_FAILURE_THRESHOLD:
+        ir.async_delete_issue(hass, DOMAIN, ISSUE_AUTH_FAILED.format(entry_id=entry.entry_id))
+    data.auth_failures = 0
 
 
 async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -236,7 +284,7 @@ def _process_advertisement(
 
         if not data.security_key:
             data.security_key = commissioning.security_key_hex
-            data.last_sequence_counter = commissioning.sequence_counter
+            async_reset_sequence(data, commissioning.sequence_counter)
             _schedule_sequence_save(data)
             hass.config_entries.async_update_entry(
                 entry, data={**entry.data, CONF_SECURITY_KEY: commissioning.security_key_hex}
@@ -290,7 +338,9 @@ def _process_advertisement(
             str(err),
             len(manufacturer_data),
         )
+        _record_auth_failure(hass, entry, data)
         return
+    _record_auth_success(hass, entry, data)
 
     _LOGGER.debug(
         "telegram_parse_success entry_id=%s mac=%s buttons=%s event_type=%s sequence_counter=%s",
