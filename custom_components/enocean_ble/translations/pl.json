@@ -8,6 +8,16 @@
       "bluetooth_confirm": {
         "title": "Potwierdź urządzenie EnOcean BLE",
         "description": "Przełącznik EnOcean o adresie {mac} został pomyślnie skonfigurowany.\n\n⚠️ Naciśnij inny przycisk, aby wyłączyć tryb commissioning, a następnie kliknij Prześlij."
+      },
+      "user": {
+        "title": "Dodaj przełącznik EnOcean BLE ręcznie",
+        "description": "Wpisz tekst kodu QR z modułu przełącznika (np. `30SE215…+Z…+30PPTM215B…`) albo jego adres i 32-cyfrowy klucz bezpieczeństwa. Możesz też to pominąć i po prostu nacisnąć przycisk przełącznika: zostanie wtedy wykryty automatycznie.",
+        "data": {
+          "onboarding": "Tekst kodu QR albo adres i klucz bezpieczeństwa"
+        },
+        "data_description": {
+          "onboarding": "Kod QR jest nadrukowany na module przełącznika pod klawiszem. Dowolny skaner QR w telefonie pokaże jego tekst."
+        }
       }
     },
     "progress": {
@@ -20,7 +30,8 @@
     },
     "error": {
       "commissioning_not_detected": "Nie odebrano telegramu commissioning w ciągu 2 minut. Spróbuj ponownie. Jeśli po kilku próbach nadal nie działa, możesz wykonać reset fabryczny. Najpierw przeczytaj ostrzeżenie dotyczące resetu w dokumentacji.",
-      "invalid_commissioning": "Odebrano telegram commissioning, ale nie udało się go zweryfikować. Spróbuj ponownie. Jeśli problem się powtarza, przeczytaj ostrzeżenie dotyczące resetu w dokumentacji przed resetem."
+      "invalid_commissioning": "Odebrano telegram commissioning, ale nie udało się go zweryfikować. Spróbuj ponownie. Jeśli problem się powtarza, przeczytaj ostrzeżenie dotyczące resetu w dokumentacji przed resetem.",
+      "invalid_onboarding": "W tekście nie znaleziono adresu EnOcean (E2:15:…) i 32-cyfrowego klucza."
     }
   },
   "options": {

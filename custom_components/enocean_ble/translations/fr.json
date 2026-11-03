@@ -8,6 +8,16 @@
       "bluetooth_confirm": {
         "title": "Confirmer l'appareil EnOcean BLE",
         "description": "Le switch EnOcean avec l'adresse {mac} a été commissionné avec succès.\n\n⚠️ Appuyez sur un autre bouton pour désactiver le mode commissioning, puis cliquez sur Soumettre."
+      },
+      "user": {
+        "title": "Ajouter un interrupteur EnOcean BLE manuellement",
+        "description": "Saisissez le texte du code QR du module de l'interrupteur (par exemple `30SE215…+Z…+30PPTM215B…`), ou son adresse et sa clé de sécurité à 32 chiffres. Vous pouvez aussi ignorer cette étape et simplement appuyer sur un bouton de l'interrupteur : il est alors détecté automatiquement.",
+        "data": {
+          "onboarding": "Texte du code QR, ou adresse et clé de sécurité"
+        },
+        "data_description": {
+          "onboarding": "Le code QR est imprimé sur le module de l'interrupteur, sous la touche. Tout lecteur de QR sur téléphone affiche son texte."
+        }
       }
     },
     "progress": {
@@ -20,7 +30,8 @@
     },
     "error": {
       "commissioning_not_detected": "Aucune trame de commissioning n'a été reçue dans les 2 minutes. Réessayez. Si cela ne fonctionne toujours pas après plusieurs tentatives, vous pouvez essayer un reset usine. Merci de lire d'abord le disclaimer de reset dans la documentation.",
-      "invalid_commissioning": "Une trame de commissioning a été reçue mais n'a pas pu être validée. Réessayez. Si cela continue d'échouer, consultez le disclaimer de reset dans la documentation avant de réinitialiser."
+      "invalid_commissioning": "Une trame de commissioning a été reçue mais n'a pas pu être validée. Réessayez. Si cela continue d'échouer, consultez le disclaimer de reset dans la documentation avant de réinitialiser.",
+      "invalid_onboarding": "Aucune adresse EnOcean (E2:15:…) et clé à 32 chiffres trouvées dans le texte."
     }
   },
   "options": {

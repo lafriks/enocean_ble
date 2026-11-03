@@ -14,6 +14,8 @@ LEGACY_PLATFORMS = [Platform.SENSOR]
 
 CONF_MAC_ADDRESS = "mac_address"
 CONF_SECURITY_KEY = "security_key"
+# Manual setup form field: QR/NFC label text of the switch.
+CONF_ONBOARDING = "onboarding"
 # Option: write the replay counter to disk after every telegram instead of a few seconds later.
 CONF_STRICT_REPLAY_PROTECTION = "strict_replay_protection"
 DEFAULT_STRICT_REPLAY_PROTECTION = False

@@ -15,12 +15,18 @@ from homeassistant.components.bluetooth import (
 )
 from homeassistant.config_entries import SOURCE_RECONFIGURE, ConfigFlowResult
 from homeassistant.core import callback
-from homeassistant.helpers.selector import BooleanSelector
+from homeassistant.helpers.selector import (
+    BooleanSelector,
+    TextSelector,
+    TextSelectorConfig,
+    TextSelectorType,
+)
 
 from . import EnOceanBleData, async_reset_sequence
 from .const import (
     COMMISSIONING_TELEGRAM_LENGTH,
     CONF_MAC_ADDRESS,
+    CONF_ONBOARDING,
     CONF_SECURITY_KEY,
     CONF_STRICT_REPLAY_PROTECTION,
     CONFIG_ENTRY_VERSION,
@@ -29,7 +35,11 @@ from .const import (
     ENOCEAN_MAC_PREFIX,
     ENOCEAN_MANUFACTURER_ID,
 )
-from .parser import ParsedCommissioningTelegram, parse_commissioning_telegram
+from .parser import (
+    ParsedCommissioningTelegram,
+    parse_commissioning_telegram,
+    parse_onboarding_blob,
+)
 
 _LOGGER = logging.getLogger(__name__)
 FLOW_TAG = "[ENOCEAN_FLOW]"
@@ -70,8 +80,37 @@ class EnOceanBleConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             self._task.cancel()
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
-        """Manual setup is not possible; switches are added from Bluetooth discovery."""
-        return self.async_abort(reason="no_bluetooth_discovery")
+        """Manual setup from the QR/NFC label text (or address and key) of the switch."""
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            try:
+                onboarding = parse_onboarding_blob(user_input[CONF_ONBOARDING])
+            except ValueError as err:
+                _LOGGER.debug("%s ONBOARDING_INVALID error=%s", FLOW_TAG, err)
+                errors["base"] = "invalid_onboarding"
+            else:
+                await self.async_set_unique_id(onboarding.mac_address)
+                self._abort_if_unique_id_configured()
+                return self.async_create_entry(
+                    title=f"EnOcean switch {onboarding.mac_address}",
+                    data={
+                        CONF_MAC_ADDRESS: onboarding.mac_address,
+                        CONF_SECURITY_KEY: onboarding.security_key_hex,
+                    },
+                )
+
+        return self.async_show_form(
+            step_id="user",
+            errors=errors,
+            # Home Assistant aliases voluptuous to probatio at runtime; mypy sees the real voluptuous.
+            data_schema=vol.Schema(  # type: ignore[arg-type]
+                {
+                    vol.Required(CONF_ONBOARDING): TextSelector(
+                        TextSelectorConfig(type=TextSelectorType.TEXT, multiline=True)
+                    )
+                }
+            ),
+        )
 
     async def async_step_bluetooth(
         self, discovery_info: BluetoothServiceInfoBleak

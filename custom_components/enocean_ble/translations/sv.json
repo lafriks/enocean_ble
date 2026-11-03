@@ -8,6 +8,16 @@
       "bluetooth_confirm": {
         "title": "Bekräfta EnOcean BLE-enhet",
         "description": "EnOcean-brytaren med adress {mac} har provisionerats.\n\n⚠️ Tryck på en annan knapp för att stänga av commissioning-läget och klicka sedan på Skicka."
+      },
+      "user": {
+        "title": "Lägg till EnOcean BLE-strömbrytare manuellt",
+        "description": "Ange texten i QR-koden på strömbrytarmodulen (till exempel `30SE215…+Z…+30PPTM215B…`), eller dess adress och 32-siffriga säkerhetsnyckel. Du kan också hoppa över detta och bara trycka på en knapp på strömbrytaren: den upptäcks då automatiskt.",
+        "data": {
+          "onboarding": "QR-kodens text, eller adress och säkerhetsnyckel"
+        },
+        "data_description": {
+          "onboarding": "QR-koden är tryckt på strömbrytarmodulen under vippan. Vilken QR-läsare som helst i telefonen visar dess text."
+        }
       }
     },
     "progress": {
@@ -20,7 +30,8 @@
     },
     "error": {
       "commissioning_not_detected": "Ingen commissioning-telegram togs emot inom 2 minuter. Försök igen. Om det fortfarande inte fungerar efter flera försök kan du prova en fabriksåterställning. Läs först reset-varningen i dokumentationen.",
-      "invalid_commissioning": "Ett commissioning-telegram togs emot men kunde inte valideras. Försök igen. Om detta fortsätter att misslyckas, läs reset-varningen i dokumentationen innan du återställer."
+      "invalid_commissioning": "Ett commissioning-telegram togs emot men kunde inte valideras. Försök igen. Om detta fortsätter att misslyckas, läs reset-varningen i dokumentationen innan du återställer.",
+      "invalid_onboarding": "Ingen EnOcean-adress (E2:15:…) och 32-siffrig nyckel hittades i texten."
     }
   },
   "options": {

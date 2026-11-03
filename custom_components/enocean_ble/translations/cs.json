@@ -8,6 +8,16 @@
       "bluetooth_confirm": {
         "title": "Potvrdit zařízení EnOcean BLE",
         "description": "Přepínač EnOcean s adresou {mac} byl úspěšně uveden do provozu.\n\n⚠️ Stiskněte jiné tlačítko pro vypnutí režimu commissioning a poté klikněte na Odeslat."
+      },
+      "user": {
+        "title": "Přidat spínač EnOcean BLE ručně",
+        "description": "Zadejte text QR kódu na modulu spínače (např. `30SE215…+Z…+30PPTM215B…`) nebo jeho adresu a 32místný bezpečnostní klíč. Můžete to také přeskočit a jen stisknout tlačítko na spínači: pak bude nalezen automaticky.",
+        "data": {
+          "onboarding": "Text QR kódu nebo adresa a bezpečnostní klíč"
+        },
+        "data_description": {
+          "onboarding": "QR kód je vytištěn na modulu spínače pod kolébkou. Jeho text zobrazí libovolná čtečka QR kódů v telefonu."
+        }
       }
     },
     "progress": {
@@ -20,7 +30,8 @@
     },
     "error": {
       "commissioning_not_detected": "Během 2 minut nebyl přijat commissioning telegram. Zkuste to znovu. Pokud to po více pokusech stále nefunguje, můžete zkusit tovární reset. Nejprve si přečtěte upozornění k resetu v dokumentaci.",
-      "invalid_commissioning": "Byl přijat commissioning telegram, ale nepodařilo se jej ověřit. Zkuste to znovu. Pokud to opakovaně selhává, před resetem si přečtěte upozornění v dokumentaci."
+      "invalid_commissioning": "Byl přijat commissioning telegram, ale nepodařilo se jej ověřit. Zkuste to znovu. Pokud to opakovaně selhává, před resetem si přečtěte upozornění v dokumentaci.",
+      "invalid_onboarding": "V textu nebyla nalezena adresa EnOcean (E2:15:…) a 32místný klíč."
     }
   },
   "options": {

@@ -8,6 +8,16 @@
       "bluetooth_confirm": {
         "title": "Confirm EnOcean BLE Device",
         "description": "EnOcean switch with address {mac} was commissioned successfully.\n\n⚠️ Press another button to disable commissioning mode, then click Submit."
+      },
+      "user": {
+        "title": "Add EnOcean BLE switch manually",
+        "description": "Enter the text of the QR code on the switch module (for example `30SE215…+Z…+30PPTM215B…`), or its address and 32-digit security key. You can also skip this and simply press a button on the switch: it is then discovered automatically.",
+        "data": {
+          "onboarding": "QR code text, or address and security key"
+        },
+        "data_description": {
+          "onboarding": "The QR code is printed on the switch module under the rocker. Any phone QR scanner shows its text."
+        }
       }
     },
     "progress": {
@@ -20,7 +30,8 @@
     },
     "error": {
       "commissioning_not_detected": "No commissioning telegram was received within 2 minutes. Try again. If it still does not work after multiple attempts, you can try a factory reset. Please read the reset disclaimer in the documentation first.",
-      "invalid_commissioning": "A commissioning telegram was received but could not be validated. Try again. If this keeps failing, review the factory reset disclaimer in the documentation before resetting."
+      "invalid_commissioning": "A commissioning telegram was received but could not be validated. Try again. If this keeps failing, review the factory reset disclaimer in the documentation before resetting.",
+      "invalid_onboarding": "No EnOcean address (E2:15:…) and 32-digit key found in the text."
     }
   },
   "options": {

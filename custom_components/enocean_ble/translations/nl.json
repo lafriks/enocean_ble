@@ -8,6 +8,16 @@
       "bluetooth_confirm": {
         "title": "Bevestig EnOcean BLE-apparaat",
         "description": "EnOcean-schakelaar met adres {mac} is succesvol gecommissioned.\n\n⚠️ Druk op een andere knop om de commissioningmodus uit te schakelen en klik daarna op Verzenden."
+      },
+      "user": {
+        "title": "EnOcean BLE-schakelaar handmatig toevoegen",
+        "description": "Voer de tekst van de QR-code op de schakelaarmodule in (bijvoorbeeld `30SE215…+Z…+30PPTM215B…`), of het adres en de 32-cijferige beveiligingssleutel. Je kunt dit ook overslaan en gewoon op een knop van de schakelaar drukken: hij wordt dan automatisch gevonden.",
+        "data": {
+          "onboarding": "QR-codetekst, of adres en beveiligingssleutel"
+        },
+        "data_description": {
+          "onboarding": "De QR-code staat op de schakelaarmodule onder de wip. Elke QR-scanner op een telefoon toont de tekst."
+        }
       }
     },
     "progress": {
@@ -20,7 +30,8 @@
     },
     "error": {
       "commissioning_not_detected": "Binnen 2 minuten is geen commissioning-telegram ontvangen. Probeer opnieuw. Als het na meerdere pogingen nog steeds niet werkt, kun je een fabrieksreset proberen. Lees eerst de resetdisclaimer in de documentatie.",
-      "invalid_commissioning": "Er is een commissioning-telegram ontvangen, maar dit kon niet worden gevalideerd. Probeer opnieuw. Als dit blijft mislukken, lees dan eerst de resetdisclaimer in de documentatie."
+      "invalid_commissioning": "Er is een commissioning-telegram ontvangen, maar dit kon niet worden gevalideerd. Probeer opnieuw. Als dit blijft mislukken, lees dan eerst de resetdisclaimer in de documentatie.",
+      "invalid_onboarding": "Geen EnOcean-adres (E2:15:…) en 32-cijferige sleutel in de tekst gevonden."
     }
   },
   "options": {

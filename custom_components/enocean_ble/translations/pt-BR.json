@@ -8,6 +8,16 @@
       "bluetooth_confirm": {
         "title": "Confirmar dispositivo EnOcean BLE",
         "description": "O interruptor EnOcean com endereço {mac} foi comissionado com sucesso.\n\n⚠️ Pressione outro botão para desativar o modo de comissionamento e depois clique em Enviar."
+      },
+      "user": {
+        "title": "Adicionar interruptor EnOcean BLE manualmente",
+        "description": "Digite o texto do código QR do módulo do interruptor (por exemplo `30SE215…+Z…+30PPTM215B…`), ou seu endereço e a chave de segurança de 32 dígitos. Você também pode pular isto e simplesmente pressionar um botão do interruptor: ele é então descoberto automaticamente.",
+        "data": {
+          "onboarding": "Texto do código QR, ou endereço e chave de segurança"
+        },
+        "data_description": {
+          "onboarding": "O código QR está impresso no módulo do interruptor, sob a tecla. Qualquer leitor de QR do celular mostra seu texto."
+        }
       }
     },
     "progress": {
@@ -20,7 +30,8 @@
     },
     "error": {
       "commissioning_not_detected": "Nenhum telegrama de comissionamento foi recebido em 2 minutos. Tente novamente. Se continuar sem funcionar após várias tentativas, você pode tentar um reset de fábrica. Leia primeiro o aviso de reset na documentação.",
-      "invalid_commissioning": "Um telegrama de comissionamento foi recebido, mas não pôde ser validado. Tente novamente. Se isso continuar falhando, revise o aviso de reset na documentação antes de resetar."
+      "invalid_commissioning": "Um telegrama de comissionamento foi recebido, mas não pôde ser validado. Tente novamente. Se isso continuar falhando, revise o aviso de reset na documentação antes de resetar.",
+      "invalid_onboarding": "Nenhum endereço EnOcean (E2:15:…) e chave de 32 dígitos encontrados no texto."
     }
   },
   "options": {

@@ -8,6 +8,16 @@
       "bluetooth_confirm": {
         "title": "EnOcean BLE-Gerät bestätigen",
         "description": "EnOcean-Schalter mit Adresse {mac} wurde erfolgreich kommissioniert.\n\n⚠️ Drücken Sie eine andere Taste, um den Kommissionierungsmodus zu beenden, und klicken Sie dann auf Senden."
+      },
+      "user": {
+        "title": "EnOcean BLE-Schalter manuell hinzufügen",
+        "description": "Geben Sie den Text des QR-Codes auf dem Schaltermodul ein (z. B. `30SE215…+Z…+30PPTM215B…`) oder dessen Adresse und den 32-stelligen Sicherheitsschlüssel. Sie können dies auch überspringen und einfach eine Taste am Schalter drücken: Er wird dann automatisch gefunden.",
+        "data": {
+          "onboarding": "QR-Code-Text oder Adresse und Sicherheitsschlüssel"
+        },
+        "data_description": {
+          "onboarding": "Der QR-Code ist auf dem Schaltermodul unter der Wippe aufgedruckt. Jeder QR-Scanner am Telefon zeigt seinen Text an."
+        }
       }
     },
     "progress": {
@@ -20,7 +30,8 @@
     },
     "error": {
       "commissioning_not_detected": "Innerhalb von 2 Minuten wurde kein Kommissionierungs-Telegramm empfangen. Versuchen Sie es erneut. Wenn es nach mehreren Versuchen weiterhin nicht funktioniert, können Sie einen Werksreset versuchen. Lesen Sie vorher den Reset-Hinweis in der Dokumentation.",
-      "invalid_commissioning": "Ein Kommissionierungs-Telegramm wurde empfangen, konnte aber nicht validiert werden. Versuchen Sie es erneut. Wenn dies weiterhin fehlschlägt, lesen Sie vor einem Reset den Hinweis in der Dokumentation."
+      "invalid_commissioning": "Ein Kommissionierungs-Telegramm wurde empfangen, konnte aber nicht validiert werden. Versuchen Sie es erneut. Wenn dies weiterhin fehlschlägt, lesen Sie vor einem Reset den Hinweis in der Dokumentation.",
+      "invalid_onboarding": "Im Text wurden keine EnOcean-Adresse (E2:15:…) und kein 32-stelliger Schlüssel gefunden."
     }
   },
   "options": {

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from types import SimpleNamespace
-from typing import Any
+from typing import Any, cast
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -73,10 +73,32 @@ async def test_wrong_prefix_aborts() -> None:
     assert result["reason"] == "not_enocean_prefix"
 
 
-async def test_user_step_aborts() -> None:
+async def test_user_step_shows_form() -> None:
     result = await _flow().async_step_user()
-    assert result["type"] is FlowResultType.ABORT
-    assert result["reason"] == "no_bluetooth_discovery"
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "user"
+    assert result["errors"] == {}
+
+
+async def test_user_step_creates_entry_from_qr_text() -> None:
+    flow = _flow()
+    result = await flow.async_step_user(
+        {"onboarding": "30SE215000019B8+Z3DDA31AD44767AE3CE56DCE2B3CE2ABB+30PPTM215B+2PDA02"}
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["title"] == "EnOcean switch E2:15:00:00:19:B8"
+    assert result["data"] == {
+        "mac_address": "E2:15:00:00:19:B8",
+        "security_key": "3dda31ad44767ae3ce56dce2b3ce2abb",
+    }
+    cast(AsyncMock, flow.async_set_unique_id).assert_awaited_once_with("E2:15:00:00:19:B8")
+    cast(MagicMock, flow._abort_if_unique_id_configured).assert_called_once()
+
+
+async def test_user_step_rejects_invalid_text() -> None:
+    result = await _flow().async_step_user({"onboarding": "hello"})
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {"base": "invalid_onboarding"}
 
 
 async def test_discovery_with_commissioning_telegram_skips_waiting() -> None:

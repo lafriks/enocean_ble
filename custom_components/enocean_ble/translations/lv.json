@@ -8,6 +8,16 @@
       "bluetooth_confirm": {
         "title": "Apstipriniet EnOcean BLE ierīci",
         "description": "EnOcean slēdzis ar adresi {mac} veiksmīgi pievienots.\n\n⚠️ Nospiediet citu pogu, lai izslēgtu pievienošanas režīmu, un pēc tam noklikšķiniet uz Iesniegt."
+      },
+      "user": {
+        "title": "Pievienot EnOcean BLE slēdzi manuāli",
+        "description": "Ievadiet slēdža moduļa QR koda tekstu (piemēram, `30SE215…+Z…+30PPTM215B…`) vai tā adresi un 32 zīmju drošības atslēgu. Šo soli var arī izlaist un vienkārši nospiest slēdža pogu: tad tas tiek atklāts automātiski.",
+        "data": {
+          "onboarding": "QR koda teksts vai adrese un drošības atslēga"
+        },
+        "data_description": {
+          "onboarding": "QR kods ir uzdrukāts uz slēdža moduļa zem taustiņa. Jebkurš tālruņa QR skeneris parāda tā tekstu."
+        }
       }
     },
     "progress": {
@@ -20,7 +30,8 @@
     },
     "error": {
       "commissioning_not_detected": "2 minūšu laikā netika saņemta pievienošanas telegramma. Mēģiniet vēlreiz. Ja pēc vairākiem mēģinājumiem tas joprojām nedarbojas, varat mēģināt atiestatīt rūpnīcas iestatījumus. Vispirms izlasiet atiestatīšanas brīdinājumu dokumentācijā.",
-      "invalid_commissioning": "Pievienošanas telegramma tika saņemta, bet to nevarēja pārbaudīt. Mēģiniet vēlreiz. Ja tas atkārtoti neizdodas, pirms atiestatīšanas izlasiet atiestatīšanas brīdinājumu dokumentācijā."
+      "invalid_commissioning": "Pievienošanas telegramma tika saņemta, bet to nevarēja pārbaudīt. Mēģiniet vēlreiz. Ja tas atkārtoti neizdodas, pirms atiestatīšanas izlasiet atiestatīšanas brīdinājumu dokumentācijā.",
+      "invalid_onboarding": "Tekstā netika atrasta EnOcean adrese (E2:15:…) un 32 zīmju atslēga."
     }
   },
   "options": {

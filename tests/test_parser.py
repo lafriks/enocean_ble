@@ -12,8 +12,17 @@ from custom_components.enocean_ble.parser import (
 )
 
 
-def test_parse_onboarding_blob_ok() -> None:
-    raw = "MAC=E2:15:AA:BB:CC:DD KEY=00112233445566778899AABBCCDDEEFF"
+@pytest.mark.parametrize(
+    "raw",
+    [
+        "MAC=E2:15:AA:BB:CC:DD KEY=00112233445566778899AABBCCDDEEFF",
+        "30SE215AABBCCDD+Z00112233445566778899AABBCCDDEEFF+30PPTM215B+2PDA02+S01234567",
+        "e2-15-aa-bb-cc-dd 00112233445566778899aabbccddeeff",
+        "00112233445566778899AABBCCDDEEFF E215AABBCCDD",
+        "  E2:15:AA:BB:CC:DD\n00112233445566778899AABBCCDDEEFF  ",
+    ],
+)
+def test_parse_onboarding_blob_ok(raw: str) -> None:
     parsed = parse_onboarding_blob(raw)
     assert parsed.mac_address == "E2:15:AA:BB:CC:DD"
     assert parsed.security_key_hex == "00112233445566778899aabbccddeeff"
@@ -25,6 +34,8 @@ def test_parse_onboarding_blob_ok() -> None:
         "MAC=11:22:33:44:55:66 KEY=00112233445566778899AABBCCDDEEFF",
         "MAC=E2:15:AA:BB:CC:DD",
         "KEY=00112233445566778899AABBCCDDEEFF",
+        "30SE215AABBCCDD+Z0011223344556677+30PPTM215B",
+        "",
     ],
 )
 def test_parse_onboarding_blob_invalid(raw: str) -> None:

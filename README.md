@@ -47,6 +47,19 @@ built on the EnOcean PTM 215B / PTM 216B modules.
 
 If the switch is already in commissioning mode, the dialog can complete almost immediately.
 
+### Without the button sequence
+
+Settings -> Devices & services -> `Add Integration` -> `EnOcean BLE` and paste the text of the QR code printed on
+the switch module (under the rocker), e.g. `30SE2150000ABCD+Z0123...+30PPTM215B+...`; the address and the
+32-digit key in any other form work too. Useful when the switch is hard to reach or its radio commissioning was
+disabled by another system.
+
+The key on the label is the factory key. If the switch was used in another system (Casambi, ABB, Niko, ...), that
+system may have written a different key into the module over NFC; then the label is out of date and
+commissioning by button fails. In that case read the current address and key with the phone against the
+module using EnOcean's NFC app ([EnOcean Tool](https://www.enocean.com/en/products/enocean-tool/)) and paste
+them into the `Add Integration` form described above.
+
 ## Options
 
 Settings -> Devices & services -> EnOcean BLE -> Configure:

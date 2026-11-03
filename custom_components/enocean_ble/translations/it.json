@@ -8,6 +8,16 @@
       "bluetooth_confirm": {
         "title": "Conferma dispositivo EnOcean BLE",
         "description": "Lo switch EnOcean con indirizzo {mac} è stato commissionato con successo.\n\n⚠️ Premi un altro pulsante per disattivare la modalità di commissioning, poi fai clic su Invia."
+      },
+      "user": {
+        "title": "Aggiungi manualmente un interruttore EnOcean BLE",
+        "description": "Inserisci il testo del codice QR sul modulo dell'interruttore (ad esempio `30SE215…+Z…+30PPTM215B…`), oppure il suo indirizzo e la chiave di sicurezza a 32 cifre. Puoi anche saltare questo passaggio e premere semplicemente un pulsante dell'interruttore: verrà rilevato automaticamente.",
+        "data": {
+          "onboarding": "Testo del codice QR, oppure indirizzo e chiave di sicurezza"
+        },
+        "data_description": {
+          "onboarding": "Il codice QR è stampato sul modulo dell'interruttore sotto il bilanciere. Qualsiasi lettore QR del telefono ne mostra il testo."
+        }
       }
     },
     "progress": {
@@ -20,7 +30,8 @@
     },
     "error": {
       "commissioning_not_detected": "Nessun telegramma di commissioning ricevuto entro 2 minuti. Riprova. Se continua a non funzionare dopo più tentativi, puoi provare un reset di fabbrica. Leggi prima il disclaimer sul reset nella documentazione.",
-      "invalid_commissioning": "È stato ricevuto un telegramma di commissioning, ma non è stato possibile validarlo. Riprova. Se continua a fallire, leggi il disclaimer sul reset nella documentazione prima di resettare."
+      "invalid_commissioning": "È stato ricevuto un telegramma di commissioning, ma non è stato possibile validarlo. Riprova. Se continua a fallire, leggi il disclaimer sul reset nella documentazione prima di resettare.",
+      "invalid_onboarding": "Nel testo non sono stati trovati un indirizzo EnOcean (E2:15:…) e una chiave a 32 cifre."
     }
   },
   "options": {
