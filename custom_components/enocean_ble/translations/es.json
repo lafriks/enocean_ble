@@ -52,5 +52,26 @@
       "title": "Ya no se puede autenticar {name}",
       "description": "Los telegramas del interruptor EnOcean **{name}** ({mac}) no superan la autenticación. Lo más probable es que el interruptor se haya restablecido de fábrica o se haya vuelto a emparejar con otro sistema, por lo que su clave de seguridad cambió.\n\nAbra la [página del dispositivo]({device_url}), elija **Reconfigurar** en el menú de tres puntos y repita la secuencia de emparejamiento. Las automatizaciones y entidades se conservan."
     }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "press": "{subtype} pulsado"
+    },
+    "trigger_subtype": {
+      "A0": "Botón A0",
+      "A1": "Botón A1",
+      "B0": "Botón B0",
+      "B1": "Botón B1"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "rssi": {
+        "name": "Intensidad de señal"
+      },
+      "last_seen": {
+        "name": "Visto por última vez"
+      }
+    }
   }
 }

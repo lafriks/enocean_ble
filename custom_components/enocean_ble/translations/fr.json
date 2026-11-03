@@ -52,5 +52,26 @@
       "title": "{name} ne peut plus être authentifié",
       "description": "Les télégrammes de l'interrupteur EnOcean **{name}** ({mac}) échouent à l'authentification. L'interrupteur a probablement été réinitialisé ou réappairé par un autre système, et sa clé de sécurité a changé.\n\nOuvrez la [page de l'appareil]({device_url}), choisissez **Reconfigurer** dans le menu à trois points et répétez la séquence d'appairage. Les automatisations et les entités sont conservées."
     }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "press": "{subtype} appuyé"
+    },
+    "trigger_subtype": {
+      "A0": "Bouton A0",
+      "A1": "Bouton A1",
+      "B0": "Bouton B0",
+      "B1": "Bouton B1"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "rssi": {
+        "name": "Force du signal"
+      },
+      "last_seen": {
+        "name": "Vu pour la dernière fois"
+      }
+    }
   }
 }

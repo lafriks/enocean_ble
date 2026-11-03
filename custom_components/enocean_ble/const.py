@@ -6,7 +6,7 @@ from homeassistant.const import Platform
 
 DOMAIN = "enocean_ble"
 INTEGRATION_NAME = "PTM 215B/PTM 216B"
-PLATFORMS = [Platform.EVENT]
+PLATFORMS = [Platform.EVENT, Platform.SENSOR]
 
 # Config entry version 1 (up to 2026.5) had per-button event sensors and an event_mode option.
 CONFIG_ENTRY_VERSION = 2
@@ -25,8 +25,18 @@ ENOCEAN_MAC_PREFIX = "E2:15:"
 
 # One signal per button, so only the matching entity receives an event.
 SIGNAL_BUTTON_EVENT = "enocean_ble_button_event_{entry_id}_{button}"
+# Every authenticated telegram (press and release, duplicates included) for the diagnostic sensors.
+SIGNAL_TELEGRAM = "enocean_ble_telegram_{entry_id}"
 
+# Bus event behind the device triggers ("Button A0 pressed" in the automation editor).
+EVENT_ENOCEAN_BLE = "enocean_ble_event"
+CONF_SUBTYPE = "subtype"
+
+ATTR_DEVICE_ID = "device_id"
+ATTR_BUTTON = "button"
+ATTR_TYPE = "type"
 ATTR_RSSI = "rssi"
+ATTR_SEEN = "last_seen"
 ATTR_SEQUENCE_COUNTER = "sequence_counter"
 ATTR_MAC_ADDRESS = "mac_address"
 

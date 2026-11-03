@@ -52,5 +52,26 @@
       "title": "{name} kann nicht mehr authentifiziert werden",
       "description": "Telegramme des EnOcean-Schalters **{name}** ({mac}) bestehen die Authentifizierung nicht. Der Schalter wurde vermutlich auf Werkseinstellungen zurückgesetzt oder von einem anderen System neu eingelernt, sodass sich sein Sicherheitsschlüssel geändert hat.\n\nÖffnen Sie die [Geräteseite]({device_url}), wählen Sie im Dreipunktmenü **Neu konfigurieren** und wiederholen Sie die Einlernsequenz. Automationen und Entitäten bleiben erhalten."
     }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "press": "{subtype} gedrückt"
+    },
+    "trigger_subtype": {
+      "A0": "Taste A0",
+      "A1": "Taste A1",
+      "B0": "Taste B0",
+      "B1": "Taste B1"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "rssi": {
+        "name": "Signalstärke"
+      },
+      "last_seen": {
+        "name": "Zuletzt gesehen"
+      }
+    }
   }
 }

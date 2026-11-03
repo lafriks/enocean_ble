@@ -27,7 +27,9 @@ log lines and your switch model.
 
 ## Automations do not trigger
 
-- Use a state trigger on `event.<device>_<button>`; every state change is one click.
+- Use a Device trigger ("Button A0 pressed") or an "Event received" trigger on `event.<device>_<button>`.
+- With a plain state trigger on the event entity, every state change is one click, including the one caused
+  by a restart; add the condition from the main README.
 - Automations from older versions that used the `enocean_ble_button_event` bus event or the
   `sensor.<device>_<button>_event` entities no longer trigger: those were removed. Change them to state
   triggers on the event entities (see the examples in the main README).
@@ -68,4 +70,6 @@ log lines and your switch model.
       active: true
   ```
 
+- Enable the **Signal strength** and **Last seen** diagnostic sensors on the device page to watch reception
+  without reading logs.
 - See [`DEBUGGING.md`](DEBUGGING.md) to measure how many presses are lost.

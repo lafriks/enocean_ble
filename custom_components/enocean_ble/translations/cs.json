@@ -52,5 +52,26 @@
       "title": "{name} již nelze ověřit",
       "description": "Telegramy ze spínače EnOcean **{name}** ({mac}) neprocházejí ověřením. Spínač byl pravděpodobně obnoven do továrního nastavení nebo znovu zprovozněn jiným systémem, takže se změnil jeho bezpečnostní klíč.\n\nOtevřete [stránku zařízení]({device_url}), v nabídce se třemi tečkami zvolte **Překonfigurovat** a zopakujte postup zprovoznění. Automatizace a entity zůstanou zachovány."
     }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "press": "{subtype} stisknuto"
+    },
+    "trigger_subtype": {
+      "A0": "Tlačítko A0",
+      "A1": "Tlačítko A1",
+      "B0": "Tlačítko B0",
+      "B1": "Tlačítko B1"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "rssi": {
+        "name": "Síla signálu"
+      },
+      "last_seen": {
+        "name": "Naposledy viděno"
+      }
+    }
   }
 }

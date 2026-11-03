@@ -52,5 +52,26 @@
       "title": "{name} vairs nevar autentificēt",
       "description": "EnOcean slēdža **{name}** ({mac}) telegrammas neiztur autentifikāciju. Visticamāk, slēdzim tika atjaunoti rūpnīcas iestatījumi vai to pārpievienoja cita sistēma, tāpēc tā drošības atslēga ir mainījusies.\n\nAtveriet [ierīces lapu]({device_url}), trīs punktu izvēlnē izvēlieties **Pārkonfigurēt** un atkārtojiet pievienošanas secību. Automatizācijas un entītijas tiek saglabātas."
     }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "press": "{subtype} nospiesta"
+    },
+    "trigger_subtype": {
+      "A0": "Poga A0",
+      "A1": "Poga A1",
+      "B0": "Poga B0",
+      "B1": "Poga B1"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "rssi": {
+        "name": "Signāla stiprums"
+      },
+      "last_seen": {
+        "name": "Pēdējoreiz redzēts"
+      }
+    }
   }
 }

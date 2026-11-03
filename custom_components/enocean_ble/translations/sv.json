@@ -52,5 +52,26 @@
       "title": "{name} kan inte längre autentiseras",
       "description": "Telegram från EnOcean-strömbrytaren **{name}** ({mac}) klarar inte autentiseringen. Strömbrytaren har troligen fabriksåterställts eller parats om av ett annat system, så dess säkerhetsnyckel har ändrats.\n\nÖppna [enhetssidan]({device_url}), välj **Konfigurera om** i trepunktsmenyn och upprepa parningssekvensen. Automationer och entiteter behålls."
     }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "press": "{subtype} nedtryckt"
+    },
+    "trigger_subtype": {
+      "A0": "Knapp A0",
+      "A1": "Knapp A1",
+      "B0": "Knapp B0",
+      "B1": "Knapp B1"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "rssi": {
+        "name": "Signalstyrka"
+      },
+      "last_seen": {
+        "name": "Senast sedd"
+      }
+    }
   }
 }

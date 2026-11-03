@@ -52,5 +52,26 @@
       "title": "{name} non può più essere autenticato",
       "description": "I telegrammi dell'interruttore EnOcean **{name}** ({mac}) non superano l'autenticazione. L'interruttore è stato probabilmente ripristinato alle impostazioni di fabbrica o riassociato da un altro sistema, quindi la sua chiave di sicurezza è cambiata.\n\nApri la [pagina del dispositivo]({device_url}), scegli **Riconfigura** dal menu a tre punti e ripeti la sequenza di associazione. Automazioni ed entità vengono mantenute."
     }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "press": "{subtype} premuto"
+    },
+    "trigger_subtype": {
+      "A0": "Pulsante A0",
+      "A1": "Pulsante A1",
+      "B0": "Pulsante B0",
+      "B1": "Pulsante B1"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "rssi": {
+        "name": "Potenza del segnale"
+      },
+      "last_seen": {
+        "name": "Ultimo contatto"
+      }
+    }
   }
 }

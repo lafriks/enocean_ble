@@ -52,5 +52,26 @@
       "title": "Nie można już uwierzytelnić {name}",
       "description": "Telegramy z przełącznika EnOcean **{name}** ({mac}) nie przechodzą uwierzytelnienia. Przełącznik został najprawdopodobniej przywrócony do ustawień fabrycznych lub ponownie sparowany przez inny system, więc jego klucz bezpieczeństwa się zmienił.\n\nOtwórz [stronę urządzenia]({device_url}), wybierz **Skonfiguruj ponownie** z menu z trzema kropkami i powtórz procedurę parowania. Automatyzacje i encje zostaną zachowane."
     }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "press": "Naciśnięto {subtype}"
+    },
+    "trigger_subtype": {
+      "A0": "Przycisk A0",
+      "A1": "Przycisk A1",
+      "B0": "Przycisk B0",
+      "B1": "Przycisk B1"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "rssi": {
+        "name": "Siła sygnału"
+      },
+      "last_seen": {
+        "name": "Ostatnio widziany"
+      }
+    }
   }
 }

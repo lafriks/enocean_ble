@@ -52,5 +52,26 @@
       "title": "{name} kan niet meer worden geverifieerd",
       "description": "Telegrammen van de EnOcean-schakelaar **{name}** ({mac}) doorstaan de verificatie niet. De schakelaar is waarschijnlijk teruggezet naar de fabrieksinstellingen of opnieuw gekoppeld door een ander systeem, waardoor de beveiligingssleutel is gewijzigd.\n\nOpen de [apparaatpagina]({device_url}), kies **Opnieuw configureren** in het menu met drie puntjes en herhaal de koppelprocedure. Automatiseringen en entiteiten blijven behouden."
     }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "press": "{subtype} ingedrukt"
+    },
+    "trigger_subtype": {
+      "A0": "Knop A0",
+      "A1": "Knop A1",
+      "B0": "Knop B0",
+      "B1": "Knop B1"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "rssi": {
+        "name": "Signaalsterkte"
+      },
+      "last_seen": {
+        "name": "Laatst gezien"
+      }
+    }
   }
 }

@@ -21,11 +21,16 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.storage import Store
+from homeassistant.util import dt as dt_util
 
 from .const import (
+    ATTR_BUTTON,
+    ATTR_DEVICE_ID,
     ATTR_MAC_ADDRESS,
     ATTR_RSSI,
+    ATTR_SEEN,
     ATTR_SEQUENCE_COUNTER,
+    ATTR_TYPE,
     AUTH_FAILURE_THRESHOLD,
     COMMISSIONING_TELEGRAM_LENGTH,
     CONF_MAC_ADDRESS,
@@ -37,10 +42,13 @@ from .const import (
     DOMAIN,
     ENOCEAN_MAC_PREFIX,
     ENOCEAN_MANUFACTURER_ID,
+    EVENT_ENOCEAN_BLE,
+    EVENT_TYPE_PRESS,
     ISSUE_AUTH_FAILED,
     LEGACY_PLATFORMS,
     PLATFORMS,
     SIGNAL_BUTTON_EVENT,
+    SIGNAL_TELEGRAM,
     STORAGE_SAVE_DELAY_SECONDS,
     STORAGE_SAVE_DELAY_STRICT_SECONDS,
     STORAGE_VERSION,
@@ -66,6 +74,8 @@ class EnOceanBleData:
     last_press_seq: dict[str, int] = field(default_factory=dict)
     # Consecutive telegrams that failed MIC verification (wrong key after a reset).
     auth_failures: int = 0
+    # Device registry id, looked up on the first event (the device is created by the platforms).
+    device_id: str | None = None
 
 
 type EnOceanBleConfigEntry = ConfigEntry[EnOceanBleData]
@@ -341,6 +351,11 @@ def _process_advertisement(
         _record_auth_failure(hass, entry, data)
         return
     _record_auth_success(hass, entry, data)
+    async_dispatcher_send(
+        hass,
+        SIGNAL_TELEGRAM.format(entry_id=entry.entry_id),
+        {ATTR_RSSI: service_info.rssi, ATTR_SEEN: dt_util.utcnow()},
+    )
 
     _LOGGER.debug(
         "telegram_parse_success entry_id=%s mac=%s buttons=%s event_type=%s sequence_counter=%s",
@@ -432,6 +447,7 @@ def _emit_button_event(
     _fire_event(
         hass=hass,
         entry=entry,
+        data=data,
         button=button,
         sequence_counter=sequence_counter,
         rssi=rssi,
@@ -443,12 +459,13 @@ def _fire_event(
     *,
     hass: HomeAssistant,
     entry: ConfigEntry,
+    data: EnOceanBleData,
     button: str,
     sequence_counter: int,
     rssi: int | None,
     mac_address: str,
 ) -> None:
-    """Send a press event to the entity of this button."""
+    """Send a press event to the button's entity and fire the bus event for device triggers."""
     signal = SIGNAL_BUTTON_EVENT.format(entry_id=entry.entry_id, button=button)
     event_data = {
         ATTR_RSSI: rssi,
@@ -465,6 +482,19 @@ def _fire_event(
         signal,
     )
     async_dispatcher_send(hass, signal, event_data)
+
+    if data.device_id is None:
+        device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, entry.entry_id)})
+        data.device_id = device.id if device else None
+    hass.bus.async_fire(
+        EVENT_ENOCEAN_BLE,
+        {
+            ATTR_DEVICE_ID: data.device_id,
+            ATTR_BUTTON: button,
+            ATTR_TYPE: EVENT_TYPE_PRESS,
+            **event_data,
+        },
+    )
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: EnOceanBleConfigEntry) -> bool:

@@ -6,7 +6,10 @@ from types import SimpleNamespace
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
+
 from custom_components.enocean_ble import (
+    EnOceanBleData,
     _fire_event,
     _process_advertisement,
     async_migrate_entry,
@@ -25,6 +28,13 @@ from custom_components.enocean_ble.diagnostics import async_get_config_entry_dia
 
 _KEY_HEX = "00112233445566778899aabbccddeeff"
 _MAC = "E2:15:AA:BB:CC:DD"
+
+
+@pytest.fixture(autouse=True)
+def dispatcher() -> Any:
+    """The real dispatcher needs a running Home Assistant; capture sends instead."""
+    with patch("custom_components.enocean_ble.async_dispatcher_send") as send:
+        yield send
 
 
 def _telegram(seq: int, status: int = 0x01 | 0x02) -> bytes:
@@ -91,7 +101,7 @@ def _wrong_key_telegram(seq: int) -> Any:
     )
 
 
-async def test_setup_restores_sequence_counter_and_rejects_replay() -> None:
+async def test_setup_restores_sequence_counter_and_rejects_replay(dispatcher: MagicMock) -> None:
     hass, entry, store = await _setup({"last_sequence_counter": 41})
     assert entry.runtime_data.last_sequence_counter == 41
 
@@ -102,6 +112,10 @@ async def test_setup_restores_sequence_counter_and_rejects_replay() -> None:
 
         _process_advertisement(hass, entry, _service_info(42))
         emit.assert_called_once()
+    # Every authenticated telegram feeds the diagnostic sensors, replays included.
+    assert dispatcher.call_count == 2
+    assert dispatcher.call_args.args[1] == "enocean_ble_telegram_entry1"
+    assert dispatcher.call_args.args[2]["rssi"] == -60
 
     assert entry.runtime_data.last_sequence_counter == 42
     data_func, delay = store.async_delay_save.call_args.args
@@ -195,21 +209,41 @@ async def test_remove_entry_deletes_store() -> None:
     store.async_remove.assert_awaited_once()
 
 
-def test_fire_event_dispatches_per_button_signal() -> None:
+def test_fire_event_dispatches_signal_and_bus_event(dispatcher: MagicMock) -> None:
     hass = MagicMock()
-    with patch("custom_components.enocean_ble.async_dispatcher_send") as send:
-        _fire_event(
-            hass=hass,
-            entry=_entry(),
-            button="B1",
-            sequence_counter=5,
-            rssi=-60,
-            mac_address=_MAC,
-        )
+    data = EnOceanBleData(mac_address=_MAC, security_key="", store=MagicMock(), save_delay=5.0)
+    with patch("custom_components.enocean_ble.dr.async_get") as dr_get:
+        dr_get.return_value.async_get_device.return_value = SimpleNamespace(id="dev42")
+        for button, seq, rssi in (("B1", 5, -60), ("A0", 7, -61)):
+            _fire_event(
+                hass=hass,
+                entry=_entry(),
+                data=data,
+                button=button,
+                sequence_counter=seq,
+                rssi=rssi,
+                mac_address=_MAC,
+            )
 
-    send.assert_called_once()
-    assert send.call_args.args[1] == "enocean_ble_button_event_entry1_B1"
-    assert send.call_args.args[2] == {"rssi": -60, "sequence_counter": 5, "mac_address": _MAC}
+    assert dispatcher.call_args_list[0].args[1] == "enocean_ble_button_event_entry1_B1"
+    assert dispatcher.call_args_list[0].args[2] == {
+        "rssi": -60,
+        "sequence_counter": 5,
+        "mac_address": _MAC,
+    }
+    assert hass.bus.async_fire.call_args_list[0].args == (
+        "enocean_ble_event",
+        {
+            "device_id": "dev42",
+            "button": "B1",
+            "type": "press",
+            "rssi": -60,
+            "sequence_counter": 5,
+            "mac_address": _MAC,
+        },
+    )
+    dr_get.return_value.async_get_device.assert_called_once()  # device id is cached
+    assert data.device_id == "dev42"
 
 
 async def test_migrate_entry_v1_removes_sensors_and_options() -> None:

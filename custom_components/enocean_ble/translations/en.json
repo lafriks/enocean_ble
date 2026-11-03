@@ -52,5 +52,26 @@
       "title": "{name} can no longer be authenticated",
       "description": "Telegrams from the EnOcean switch **{name}** ({mac}) fail authentication. The switch was most likely factory-reset or re-commissioned by another system, so its security key changed.\n\nOpen the [device page]({device_url}), choose **Reconfigure** from the three-dot menu and repeat the commissioning sequence. Automations and entities are kept."
     }
+  },
+  "device_automation": {
+    "trigger_type": {
+      "press": "{subtype} pressed"
+    },
+    "trigger_subtype": {
+      "A0": "Button A0",
+      "A1": "Button A1",
+      "B0": "Button B0",
+      "B1": "Button B1"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "rssi": {
+        "name": "Signal strength"
+      },
+      "last_seen": {
+        "name": "Last seen"
+      }
+    }
   }
 }

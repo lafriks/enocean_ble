@@ -83,25 +83,27 @@ Event data:
 - `rssi`
 - `sequence_counter`
 
+Two diagnostic sensors per switch, **Signal strength** (dBm) and **Last seen**, are created disabled; enable
+them on the device page if you want to check reception.
+
 ## Usage Examples
 
-Any state change of an event entity is one click, so automations need no extra conditions on the event type.
-Entity IDs follow the device name, e.g. `event.living_room_switch_a0`.
+### In the automation editor
+
+Either add a **Device** trigger, pick the switch and choose e.g. *Button A0 pressed*, or add an
+**Entity → Event received** trigger on `event.<switch>_a0`. Both fire exactly once per click and ignore
+Home Assistant restarts.
 
 ### Toggle a light
 
 ```yaml
 alias: EnOcean A0 - Toggle light
 triggers:
-  - trigger: state
-    entity_id: event.living_room_switch_a0
-conditions:
-  # Optional: skip the state changes caused by a Home Assistant restart or reload.
-  # In the visual editor this is "Add condition" -> "Template".
-  - condition: template
-    value_template: >-
-      {{ trigger.from_state.state not in ['unavailable', 'unknown']
-         and trigger.to_state.state not in ['unavailable', 'unknown'] }}
+  - trigger: device
+    domain: enocean_ble
+    device_id: 0123456789abcdef0123456789abcdef   # pick the switch in the editor
+    type: press
+    subtype: A0
 actions:
   - action: light.toggle
     target:
@@ -113,23 +115,27 @@ actions:
 ```yaml
 alias: EnOcean A - Living room light
 triggers:
-  - trigger: state
-    entity_id: event.living_room_switch_a0
+  - trigger: event.received
+    target:
+      entity_id: event.living_room_switch_a0
     id: "on"
-  - trigger: state
-    entity_id: event.living_room_switch_a1
+  - trigger: event.received
+    target:
+      entity_id: event.living_room_switch_a1
     id: "off"
-conditions:
-  # Optional, see above.
-  - condition: template
-    value_template: >-
-      {{ trigger.from_state.state not in ['unavailable', 'unknown']
-         and trigger.to_state.state not in ['unavailable', 'unknown'] }}
 actions:
   - action: "light.turn_{{ trigger.id }}"
     target:
       entity_id: light.living_room
 ```
+
+On Home Assistant versions without the `event.received` trigger, use a `state` trigger on the event entity
+instead and add a template condition that `trigger.from_state.state` and `trigger.to_state.state` are not
+`unavailable` or `unknown` (a restart also changes the state).
+
+## Troubleshooting
+
+See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) and [docs/DEBUGGING.md](docs/DEBUGGING.md).
 
 ## Re-commissioning
 
